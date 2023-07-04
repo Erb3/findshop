@@ -158,11 +158,7 @@ sc.on("command", async (cmd) => {
             }
         }
         else if ((cmd.args[0] == "sell") || (cmd.args[0] == "sl")) {
-            let search_item;
-            if (cmd.args[1] == null)
-                search_item = cmd.args[0];
-            else
-                search_item = cmd.args[1];
+            const search_item: string = cmd.args[1];
 
             const shops: Array<Shop> = await fetchData();
             let results = [];
@@ -200,7 +196,72 @@ sc.on("command", async (cmd) => {
             }
         }
         else if ((cmd.args[0] == "shop") || (cmd.args[0] == "sh")) {
-            await sc.tell(cmd.user.name, "(Shop not yet implemented)");
+            const search_name: string = cmd.args[1];
+
+            const shops: Array<Shop> = await fetchData();
+            let results: Array<Shop> = [];
+            for (const shop of shops) {
+                if (shop.info.name.toLowerCase().includes(search_name.toLowerCase())) {
+                    results.push(shop)
+                }
+            }
+
+            if (results.length == 0) {
+                await sc.tell(cmd.user.name, `**Error!** FindShop was unable to find any shops named \`${ search_name }\`. [Why are shops and items missing?](${help_link})`);
+            }
+            else {
+                let printResults = "";
+
+                if (((results.length > 1) && (cmd.args[2] == null)) || ((cmd.args[2] != null) && (Number(cmd.args[2]) > results.length))) {
+                    for (var i = 0; i < results.length; i++) {
+                        printResults += `\n(\`${ i + 1 }\`) ${ results[i].info.name }`
+                    }
+
+                    await sc.tell(cmd.user.name, `Multiple shops were found. Run \`\\fs sh ${ search_name } [number]\` to see specific information. ${ printResults }`);
+                }
+                else {
+                    let display_shop_idx = 1;
+                    if (cmd.args[2] != null) {
+                        display_shop_idx = Number(cmd.args[2]);
+                    }
+
+                    const display_shop:Shop = results[display_shop_idx - 1];
+
+                    printResults = `**${ display_shop.info.name }**`;
+                    if (display_shop.info.owner) {
+                        printResults += ` *by ${ display_shop.info.owner }*`;
+                    }
+                    printResults += `\n`;
+
+                    if (display_shop.info.location) {
+                        printResults += `Located at \`${ genCoords(display_shop.info.location) }\``
+
+                        if (display_shop.info.location.dimension) {
+                            printResults += ` in the \`${ display_shop.info.location.dimension }\``
+                        }
+
+                        if (display_shop.info.otherLocations) {
+                            printResults += `+ \`${ display_shop.info.otherLocations.length }\` other locations`
+                        }
+
+                        printResults += `\n`;
+                    }
+
+                    if (display_shop.info.software) {
+                        printResults += `Running \`${ display_shop.info.software.name }\``;
+
+                        if (display_shop.info.software.version) {
+                            printResults += ` v\`${ display_shop.info.software.version }\``;
+                        }
+
+                        printResults += `\n`;
+                    }
+
+                    printResults += `Selling \`${ display_shop.items.length }\` items`;
+
+                    await sc.tell(cmd.user.name, printResults);
+                }
+            }
         }
     }
 });
