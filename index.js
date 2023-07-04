@@ -16,70 +16,22 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { Client } from "npm:switchchat";
+import { Client } from "switchchat";
 import Keys from "./keys.json" assert { type: "json" };
 
-const aliases: string[] = ["fs", "find", "findshop"]
-const sc: Client = new Client(Keys.CB_KEY);
+const aliases = ["fs", "find", "findshop"]
+const sc = new Client(Keys.CB_KEY);
 const help_link = "https://github.com/slimit75/FindShop/wiki/Why-are-shops-and-items-missing%3F";
 const db_endpoint = "https://us-east-1.aws.data.mongodb-api.com/app/data-wcgdk/endpoint/data/v1";
 
 sc.defaultName = "&6&lFindShop";
 sc.defaultFormattingMode = "markdown";
 
-// Location of a shop. All fields are optional.
-interface location_s {
-    coordinates?: number[],
-    description?: string,
-    dimension?: string
-}
-
-// Structure of the shop item object.
-interface item_s {
-    prices: {
-        value: number,
-        currency: string,
-        address: string,
-        requiredMeta?: string
-    }[],
-    item: {
-        name: string,
-        displayName: string,
-        nbt?: string
-    }
-    dynamicPrice?: boolean,
-    stock?: number,
-    madeOnDemand?: boolean,
-    requiresInteraction?: boolean,
-    shopBuysItem?: boolean,
-    noLimit?: boolean
-}
-
-// Structure of the shop object.
-interface Shop {
-    type: string,
-    info: {
-        name: string,
-        description?: string,
-        owner?: string,
-        computerID?: number,
-        multiShop?: number,
-        software?: {
-            name?: string,
-            version?: string
-        },
-        location: location_s,
-        otherLocations?: location_s[],
-
-    }
-    items: item_s[]
-}
-
 /**
  * Generates human-readable coordinates
  * @param location Input coordinates from shop
  */
-function genCoords(location: location_s): string {
+function genCoords(location) {
     let shopLocation = "Unknown";
 
     if (location) {
@@ -98,7 +50,7 @@ function genCoords(location: location_s): string {
  * Generates human-readable prices
  * @param item Input item from shop
  */
-function fmt_price(item: item_s): string {
+function fmt_price(item) {
     if (item.dynamicPrice) {
         return `\`${ item.prices[0].value }*\` ${ item.prices[0].currency }`
     }
@@ -118,7 +70,7 @@ async function fetchData() {
         filter: {}
     }
 
-    const resp: Response = await fetch(db_endpoint + "/action/find", {
+    const resp = await fetch(db_endpoint + "/action/find", {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
@@ -138,13 +90,16 @@ sc.on("command", async (cmd) => {
             // Help message
             await sc.tell(cmd.user.name, `FindShop helps locate ShopSync-compatible shops buying or selling an item.\n\`\\fs list\` - List detected shops\n\`\\fs stats\` - Statistics (currently only shop count)\n\`\\fs buy [item]\` - Finds shops selling *[item]*\n\`\\fs sell [item]\` - Finds shops buying *[item]*\n\`\\fs shop [name]\` - Finds shops named *[name]* and their info`)
         }
+        else if (cmd.args[0] == "status") {
+            await sc.tell(cmd.user.name, "FindShop Status:\nChatbox: **Online**, preparing 2nd migration attempt\nReceiver: **Down**, attempting solutions", sc.defaultName, "markdown")
+        }
         else if (cmd.args[0] == "stats") {
             // Link to stats dashboard
             await sc.tell(cmd.user.name, `Detailed shop statistics can be viewed [here](https://charts.mongodb.com/charts-findshop-lwmvk/public/dashboards/649f2873-58ae-45ef-8079-03201394a531).`);
         }
         else if ((cmd.args[0] == "list") || (cmd.args[0] == "l")) {
             // List shops
-            const shops: Array<Shop> = await fetchData();
+            const shops = await fetchData();
             let printResults = "";
 
             for (const shop of shops) {
@@ -161,7 +116,7 @@ sc.on("command", async (cmd) => {
             }
             console.log(`Searching for shops selling ${ search_item }`);
 
-            const shops: Array<Shop> = await fetchData();
+            const shops = await fetchData();
             const results = [];
             for (const shop of shops) {
                 for (const item of shop.items) {
@@ -197,10 +152,10 @@ sc.on("command", async (cmd) => {
         }
         else if ((cmd.args[0] == "sell") || (cmd.args[0] == "sl")) {
             // Find shops buying search_item
-            const search_item: string = cmd.args[1];
+            const search_item = cmd.args[1];
             console.log(`Searching for shops buying ${ search_item }`);
 
-            const shops: Array<Shop> = await fetchData();
+            const shops = await fetchData();
             const results = [];
             for (const shop of shops) {
                 for (const item of shop.items) {
@@ -236,11 +191,11 @@ sc.on("command", async (cmd) => {
         }
         else if ((cmd.args[0] == "shop") || (cmd.args[0] == "sh")) {
             // Find shop named search_name
-            const search_name: string = cmd.args[1];
+            const search_name = cmd.args[1];
             console.log(`Searching for shops named ${ search_name }`);
 
-            const shops: Array<Shop> = await fetchData();
-            const results: Array<Shop> = [];
+            const shops = await fetchData();
+            const results = [];
             for (const shop of shops) {
                 if (shop.info.name.toLowerCase().includes(search_name.toLowerCase())) {
                     results.push(shop)
@@ -264,7 +219,7 @@ sc.on("command", async (cmd) => {
                     if (cmd.args[2] != null) {
                         display_shop_idx = Number(cmd.args[2]);
                     }
-                    const display_shop:Shop = results[display_shop_idx - 1];
+                    const display_shop = results[display_shop_idx - 1];
 
                     printResults = `**${ display_shop.info.name }**`;
                     if (display_shop.info.owner) {

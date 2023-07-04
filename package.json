@@ -1,0 +1,13 @@
+{
+  "name": "fs-chatbox",
+  "version": "1.0.0",
+  "description": "Chatbox client for FindShop ",
+  "main": "index.js",
+  "repository": "https://github.com/slimit75/fs-chatbox.git",
+  "author": "slimit75",
+  "license": "GNUv3",
+  "type": "module",
+  "dependencies": {
+    "switchchat": "^3.2.1"
+  }
+}
