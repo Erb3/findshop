@@ -158,7 +158,46 @@ sc.on("command", async (cmd) => {
             }
         }
         else if ((cmd.args[0] == "sell") || (cmd.args[0] == "sl")) {
-            await sc.tell(cmd.user.name, "(Sell not yet implemented)");
+            let search_item;
+            if (cmd.args[1] == null)
+                search_item = cmd.args[0];
+            else
+                search_item = cmd.args[1];
+
+            const shops: Array<Shop> = await fetchData();
+            let results = [];
+            for (const shop of shops) {
+                for (const item of shop.items) {
+                    if (item.item.name == null) {
+                        console.debug(`A shop (${shop.info.name}) is missing an item name!!`);
+                    }
+                    else if ((item.item.name.toLowerCase().includes(search_item.toLowerCase()) || item.item.displayName.toLowerCase().includes(search_item.toLowerCase())) && item.shopBuysItem) {
+                        results.push({
+                            shop: shop.info,
+                            item: item
+                        })
+                    }
+                }
+            }
+
+            if (results.length == 0) {
+                await sc.tell(cmd.user.name, `**Error!** FindShop was unable to find any shops buying \`${ search_item }\`. [Why are shops and items missing?](${help_link})`);
+            }
+            else {
+                let printResults = "";
+
+                if (results.length > 5) {
+                    await sc.tell(cmd.user.name, "**Note:** Too many results found. Shorting the list to the first 5 results.");
+
+                    results.length = 5;
+                }
+
+                for (const result of results) {
+                    printResults += `\n\`${ result.item.item.name }\` at **${ result.shop.name }** (\`${ genCoords(result.shop.location) }\`) for ${ fmt_price(result.item) }`;
+                }
+
+                await sc.tell(cmd.user.name, `Here's what we found for \`${ search_item }\`: ${ printResults }`);
+            }
         }
         else if ((cmd.args[0] == "shop") || (cmd.args[0] == "sh")) {
             await sc.tell(cmd.user.name, "(Shop not yet implemented)");
