@@ -1,20 +1,22 @@
 import { Client } from "npm:switchchat";
 import Keys from "./keys.json" assert { type: "json" };
 
-const aliases: string[] = ["fse", "finds", "findshop-exp"]
+const aliases: string[] = ["fs", "find", "findshop"]
 const sc: Client = new Client(Keys.CB_KEY);
 const help_link = "https://github.com/slimit75/FindShop/wiki/Why-are-shops-and-items-missing%3F";
 const db_endpoint = "https://us-east-1.aws.data.mongodb-api.com/app/data-wcgdk/endpoint/data/v1";
 
-sc.defaultName = "&6&lFindShop Experimental";
+sc.defaultName = "&6&lFindShop";
 sc.defaultFormattingMode = "markdown";
 
+// Location of a shop. All fields are optional.
 interface location_s {
     coordinates?: number[],
     description?: string,
     dimension?: string
 }
 
+// Structure of the shop item object.
 interface item_s {
     prices: {
         value: number,
@@ -35,6 +37,7 @@ interface item_s {
     noLimit?: boolean
 }
 
+// Structure of the shop object.
 interface Shop {
     type: string,
     info: {
@@ -54,6 +57,10 @@ interface Shop {
     items: item_s[]
 }
 
+/**
+ * Generates human-readable coordinates
+ * @param location Input coordinates from shop
+ */
 function genCoords(location: location_s): string {
     let shopLocation = "Unknown";
 
@@ -69,13 +76,22 @@ function genCoords(location: location_s): string {
     return shopLocation
 }
 
+/**
+ * Generates human-readable prices
+ * @param item Input item from shop
+ */
 function fmt_price(item: item_s): string {
-    if (item.dynamicPrice)
+    if (item.dynamicPrice) {
         return `\`${ item.prices[0].value }*\` ${ item.prices[0].currency }`
-    else
+    }
+    else {
         return `\`${ item.prices[0].value }\` ${ item.prices[0].currency }`
+    }
 }
 
+/**
+ * Fetches data from the database
+ */
 async function fetchData() {
     const body = {
         dataSource: "Cluster0",
@@ -97,15 +113,19 @@ async function fetchData() {
     return temp.documents;
 }
 
+// Chatbox Command Handler
 sc.on("command", async (cmd) => {
     if (aliases.includes(cmd.command)) {
         if ((cmd.args[0] == null) || (cmd.args[0] == "help")) {
-            await sc.tell(cmd.user.name, "FindShop is a service to locate any shops buying or selling an item. We have a few subcommands, too: \n`\\fs list` - List detected shops\n`\\fs stats` - Statistics (currently only shop count)\n`\\fs buy <item>` - Finds shops selling *<item>*\n`\\fs sell <item>` - Finds shops buying *<item>*\n`\\fs shop <name>` - Finds shops named *<name>* and their info")
+            // Help message
+            await sc.tell(cmd.user.name, `FindShop helps locate ShopSync-compatible shops buying or selling an item.\n\`\\fs list\` - List detected shops\n\`\\fs stats\` - Statistics (currently only shop count)\n\`\\fs buy [item]\` - Finds shops selling *[item]*\n\`\\fs sell [item]\` - Finds shops buying *[item]*\n\`\\fs shop [name]\` - Finds shops named *[name]* and their info`)
         }
         else if (cmd.args[0] == "stats") {
-            await sc.tell(cmd.user.name, "Detailed shop statistics can be viewed [here](https://charts.mongodb.com/charts-findshop-lwmvk/public/dashboards/649f2873-58ae-45ef-8079-03201394a531).");
+            // Link to stats dashboard
+            await sc.tell(cmd.user.name, `Detailed shop statistics can be viewed [here](https://charts.mongodb.com/charts-findshop-lwmvk/public/dashboards/649f2873-58ae-45ef-8079-03201394a531).`);
         }
         else if ((cmd.args[0] == "list") || (cmd.args[0] == "l")) {
+            // List shops
             const shops: Array<Shop> = await fetchData();
             let printResults = "";
 
@@ -116,14 +136,15 @@ sc.on("command", async (cmd) => {
             await sc.tell(cmd.user.name, `FindShop found the following shops:\n${ printResults }`);
         }
         else if ((cmd.args[0] == "buy") || (cmd.args[0] == "b") || (cmd.args[1] == null)) {
-            let search_item;
-            if (cmd.args[1] == null)
+            // Find shops selling search_item
+            let search_item = cmd.args[1];
+            if (cmd.args[1] == null) {
                 search_item = cmd.args[0];
-            else
-                search_item = cmd.args[1];
+            }
+            console.log(`Searching for shops selling ${ search_item }`);
 
             const shops: Array<Shop> = await fetchData();
-            let results = [];
+            const results = [];
             for (const shop of shops) {
                 for (const item of shop.items) {
                     if (item.item.name == null) {
@@ -146,7 +167,6 @@ sc.on("command", async (cmd) => {
 
                 if (results.length > 5) {
                     await sc.tell(cmd.user.name, "**Note:** Too many results found. Shorting the list to the first 5 results.");
-
                     results.length = 5;
                 }
 
@@ -158,10 +178,12 @@ sc.on("command", async (cmd) => {
             }
         }
         else if ((cmd.args[0] == "sell") || (cmd.args[0] == "sl")) {
+            // Find shops buying search_item
             const search_item: string = cmd.args[1];
+            console.log(`Searching for shops buying ${ search_item }`);
 
             const shops: Array<Shop> = await fetchData();
-            let results = [];
+            const results = [];
             for (const shop of shops) {
                 for (const item of shop.items) {
                     if (item.item.name == null) {
@@ -184,7 +206,6 @@ sc.on("command", async (cmd) => {
 
                 if (results.length > 5) {
                     await sc.tell(cmd.user.name, "**Note:** Too many results found. Shorting the list to the first 5 results.");
-
                     results.length = 5;
                 }
 
@@ -196,10 +217,12 @@ sc.on("command", async (cmd) => {
             }
         }
         else if ((cmd.args[0] == "shop") || (cmd.args[0] == "sh")) {
+            // Find shop named search_name
             const search_name: string = cmd.args[1];
+            console.log(`Searching for shops named ${ search_name }`);
 
             const shops: Array<Shop> = await fetchData();
-            let results: Array<Shop> = [];
+            const results: Array<Shop> = [];
             for (const shop of shops) {
                 if (shop.info.name.toLowerCase().includes(search_name.toLowerCase())) {
                     results.push(shop)
@@ -211,9 +234,8 @@ sc.on("command", async (cmd) => {
             }
             else {
                 let printResults = "";
-
                 if (((results.length > 1) && (cmd.args[2] == null)) || ((cmd.args[2] != null) && (Number(cmd.args[2]) > results.length))) {
-                    for (var i = 0; i < results.length; i++) {
+                    for (let i = 0; i < results.length; i++) {
                         printResults += `\n(\`${ i + 1 }\`) ${ results[i].info.name }`
                     }
 
@@ -224,7 +246,6 @@ sc.on("command", async (cmd) => {
                     if (cmd.args[2] != null) {
                         display_shop_idx = Number(cmd.args[2]);
                     }
-
                     const display_shop:Shop = results[display_shop_idx - 1];
 
                     printResults = `**${ display_shop.info.name }**`;
@@ -235,30 +256,24 @@ sc.on("command", async (cmd) => {
 
                     if (display_shop.info.location) {
                         printResults += `Located at \`${ genCoords(display_shop.info.location) }\``
-
                         if (display_shop.info.location.dimension) {
                             printResults += ` in the \`${ display_shop.info.location.dimension }\``
                         }
-
                         if (display_shop.info.otherLocations) {
                             printResults += `+ \`${ display_shop.info.otherLocations.length }\` other locations`
                         }
-
                         printResults += `\n`;
                     }
 
                     if (display_shop.info.software) {
                         printResults += `Running \`${ display_shop.info.software.name }\``;
-
                         if (display_shop.info.software.version) {
                             printResults += ` v\`${ display_shop.info.software.version }\``;
                         }
-
                         printResults += `\n`;
                     }
 
                     printResults += `Selling \`${ display_shop.items.length }\` items`;
-
                     await sc.tell(cmd.user.name, printResults);
                 }
             }
