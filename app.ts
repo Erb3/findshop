@@ -70,12 +70,10 @@ function genCoords(location: location_s): string {
 }
 
 function fmt_price(item: item_s): string {
-    if (item.dynamicPrice) {
+    if (item.dynamicPrice)
         return `\`${ item.prices[0].value }*\` ${ item.prices[0].currency }`
-    }
-    else {
+    else
         return `\`${ item.prices[0].value }\` ${ item.prices[0].currency }`
-    }
 }
 
 async function fetchData() {
@@ -107,14 +105,22 @@ sc.on("command", async (cmd) => {
         else if (cmd.args[0] == "stats") {
             await sc.tell(cmd.user.name, "Detailed shop statistics can be viewed [here](https://charts.mongodb.com/charts-findshop-lwmvk/public/dashboards/649f2873-58ae-45ef-8079-03201394a531).");
         }
+        else if ((cmd.args[0] == "list") || (cmd.args[0] == "l")) {
+            const shops: Array<Shop> = await fetchData();
+            let printResults = "";
+
+            for (const shop of shops) {
+                printResults += `\n**${ shop.info.name }** at \`${ genCoords(shop.info.location) }\``;
+            }
+
+            await sc.tell(cmd.user.name, `FindShop found the following shops:\n${ printResults }`);
+        }
         else if ((cmd.args[0] == "buy") || (cmd.args[0] == "b") || (cmd.args[1] == null)) {
             let search_item;
-            if (cmd.args[1] == null) {
+            if (cmd.args[1] == null)
                 search_item = cmd.args[0];
-            }
-            else {
+            else
                 search_item = cmd.args[1];
-            }
 
             const shops: Array<Shop> = await fetchData();
             let results = [];
@@ -161,7 +167,7 @@ sc.on("command", async (cmd) => {
 });
 
 sc.on("ready", () => {
-    console.log("Connected!");
+    console.log("Started FindShop Chatbox Server");
 });
 
 sc.connect();
