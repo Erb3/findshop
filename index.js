@@ -90,9 +90,6 @@ sc.on("command", async (cmd) => {
             // Help message
             await sc.tell(cmd.user.name, `FindShop helps locate ShopSync-compatible shops buying or selling an item.\n\`\\fs list\` - List detected shops\n\`\\fs stats\` - Statistics (currently only shop count)\n\`\\fs buy [item]\` - Finds shops selling *[item]*\n\`\\fs sell [item]\` - Finds shops buying *[item]*\n\`\\fs shop [name]\` - Finds shops named *[name]* and their info`)
         }
-        else if (cmd.args[0] == "status") {
-            await sc.tell(cmd.user.name, "FindShop Status:\nChatbox: **Online**, preparing 2nd migration attempt\nReceiver: **Down**, attempting solutions", sc.defaultName, "markdown")
-        }
         else if (cmd.args[0] == "stats") {
             // Link to stats dashboard
             await sc.tell(cmd.user.name, `Detailed shop statistics can be viewed [here](https://charts.mongodb.com/charts-findshop-lwmvk/public/dashboards/649f2873-58ae-45ef-8079-03201394a531).`);
@@ -119,16 +116,22 @@ sc.on("command", async (cmd) => {
             const shops = await fetchData();
             const results = [];
             for (const shop of shops) {
-                for (const item of shop.items) {
-                    if (item.item.name == null) {
-                        console.debug(`A shop (${shop.info.name}) is missing an item name!!`);
+                // Check item length because if this is zero, it will crash!!! Thanks books.kst
+                if (shop.items.length > 0) {
+                    for (const item of shop.items) {
+                        if (item.item.name == null) {
+                            console.debug(`A shop (${shop.info.name}) is missing an item name!!`);
+                        }
+                        else if (((item.item.name.toLowerCase().includes(search_item.toLowerCase())) || (item.item.displayName.toLowerCase().includes(search_item.toLowerCase()))) && (!item.shopBuysItem) && ((item.stock != 0) || (item.madeOnDemand))) {
+                            results.push({
+                                shop: shop.info,
+                                item: item
+                            })
+                        }
                     }
-                    else if (((item.item.name.toLowerCase().includes(search_item.toLowerCase())) || (item.item.displayName.toLowerCase().includes(search_item.toLowerCase()))) && (!item.shopBuysItem) && ((item.stock != 0) || (item.madeOnDemand))) {
-                        results.push({
-                            shop: shop.info,
-                            item: item
-                        })
-                    }
+                }
+                else {
+                    console.warn(`A shop (${shop.info.name}) is broadcasting an empty items array!!`)
                 }
             }
 
@@ -160,7 +163,7 @@ sc.on("command", async (cmd) => {
             for (const shop of shops) {
                 for (const item of shop.items) {
                     if (item.item.name == null) {
-                        console.debug(`A shop (${shop.info.name}) is missing an item name!!`);
+                        console.warn(`A shop (${shop.info.name}) is missing an item name!!`);
                     }
                     else if ((item.item.name.toLowerCase().includes(search_item.toLowerCase()) || item.item.displayName.toLowerCase().includes(search_item.toLowerCase())) && item.shopBuysItem) {
                         results.push({
