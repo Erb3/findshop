@@ -8,6 +8,7 @@
   "license": "GNUv3",
   "type": "module",
   "dependencies": {
+    "pm2": "^5.3.0",
     "switchchat": "^3.2.1"
   }
 }
