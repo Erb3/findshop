@@ -16,27 +16,32 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+import "dotenv/config";
 import { Client } from "switchchat";
-import Keys from "./keys.json" assert { type: "json" };
+import { MongoClient } from "mongodb";
 
-const aliases = ["fs", "find", "findshop"]
-const sc = new Client(Keys.CB_KEY);
+const sc = new Client(process.env.CB_KEY);
+const db_client = new MongoClient(process.env.DB_URI);
+const database = db_client.db(`Main_DB`);
+const db_shops = database.collection(`Main DB`);
+
+const aliases = ["fs", "find", "findshop"];
+const resultsPerPage = 7;
 const help_link = "https://github.com/slimit75/FindShop/wiki/Why-are-shops-and-items-missing%3F";
-const db_endpoint = "https://us-east-1.aws.data.mongodb-api.com/app/data-wcgdk/endpoint/data/v1";
 
 sc.defaultName = "&6&lFindShop";
 sc.defaultFormattingMode = "markdown";
 
 /**
- * Generates human-readable coordinates
- * @param location Input coordinates from shop
- */
+* Generates human-readable coordinates
+* @param location Input coordinates from shop
+*/
 function genCoords(location) {
     let shopLocation = "Unknown";
 
     if (location) {
-        if (location.coordinates) {
-            shopLocation = `${location.coordinates[0]}, ${location.coordinates[1]}, ${location.coordinates[2]}`
+        if ((location.coordinates) && (location.coordinates.length == 3)) {
+            shopLocation = `${location.coordinates[0]} ${location.coordinates[1]} ${location.coordinates[2]}`
         }
         else if (location.description) {
             shopLocation = location.description
@@ -47,9 +52,9 @@ function genCoords(location) {
 }
 
 /**
- * Generates human-readable prices
- * @param item Input item from shop
- */
+* Generates human-readable prices
+* @param item Input item from shop
+*/
 function fmt_price(item) {
     if (item.dynamicPrice) {
         return `\`${ item.prices[0].value }*\` ${ item.prices[0].currency }`
@@ -57,30 +62,6 @@ function fmt_price(item) {
     else {
         return `\`${ item.prices[0].value }\` ${ item.prices[0].currency }`
     }
-}
-
-/**
- * Fetches data from the database
- */
-async function fetchData() {
-    const body = {
-        dataSource: "Cluster0",
-        database: "Main_DB",
-        collection: "Main DB",
-        filter: {}
-    }
-
-    const resp = await fetch(db_endpoint + "/action/find", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            "api-key": Keys.DB_KEY,
-        },
-        body: JSON.stringify(body)
-    });
-
-    const temp = await resp.json();
-    return temp.documents;
 }
 
 // Chatbox Command Handler
@@ -98,14 +79,25 @@ sc.on("command", async (cmd) => {
             }
             else if ((cmd.args[0] == "list") || (cmd.args[0] == "l")) {
                 // List shops
-                const shops = await fetchData();
-                let printResults = "";
+                const shops = await db_shops.find({}, { collation: { locale: "en_US", strength: 2 }}).sort({ "info.name": 1 }).toArray();
+                const resultsLength = shops.length;
 
+                let pageNumber = 1;
+                if (cmd.args[1]) {
+                    pageNumber = Number(cmd.args[1]);
+                    shops.splice(0, 10 * (pageNumber - 1));
+                }
+
+                if (shops.length > 10) {
+                    shops.length = 10;
+                }
+
+                let printResults = "";
                 for (const shop of shops) {
                     printResults += `\n**${ shop.info.name }** at \`${ genCoords(shop.info.location) }\``;
                 }
 
-                await sc.tell(cmd.user.name, `FindShop found the following shops:\n${ printResults }`);
+                await sc.tell(cmd.user.name, `Results:\n========== Page ${ pageNumber } of ${ Math.ceil(resultsLength / 10) } ==========${ printResults }\n===== \`\\fs list [page]\` for more =====`);
             }
             else if ((cmd.args[0] == "buy") || (cmd.args[0] == "b") || (cmd.args[1] == null)) {
                 // Find shops selling search_item
@@ -114,7 +106,7 @@ sc.on("command", async (cmd) => {
                     search_item = cmd.args[0];
                 }
 
-                const shops = await fetchData();
+                const shops = await db_shops.find().toArray();
                 const results = [];
                 for (const shop of shops) {
                     // Check item length because if this is zero, it will crash!!! Thanks books.kst
@@ -140,25 +132,32 @@ sc.on("command", async (cmd) => {
                     await sc.tell(cmd.user.name, `**Error!** FindShop was unable to find any shops with \`${ search_item }\` in stock. [Why are shops and items missing?](${help_link})`);
                 }
                 else {
-                    let printResults = "";
+                    const resultsLength = results.length;
 
-                    if (results.length > 5) {
-                        await sc.tell(cmd.user.name, "**Note:** Too many results found. Shorting the list to the first 5 results.");
-                        results.length = 5;
+                    let pageNumber = 1;
+                    if (cmd.args[2]) {
+                        pageNumber = Number(cmd.args[2]);
+                        results.splice(0, resultsPerPage * (pageNumber - 1));
                     }
 
-                    for (const result of results) {
-                        printResults += `\n\`${ result.item.item.name }\` at **${ result.shop.name }** (\`${ genCoords(result.shop.location) }\`) for ${ fmt_price(result.item) } (\`${ result.item.stock }\` in stock)`;
-                    }
-
-                    await sc.tell(cmd.user.name, `Here's what we found for \`${ search_item }\`: ${ printResults }`);
+                if (results.length > resultsPerPage) {
+                    results.length = resultsPerPage;
                 }
+
+                let printResults = "";
+                for (const result of results) {
+                    printResults += `\n\`${ result.item.item.name }\` at **${ result.shop.name }** (\`${ genCoords(result.shop.location) }\`) for ${ fmt_price(result.item) } (\`${ result.item.stock }\` in stock)`;
+                }
+
+                await sc.tell(cmd.user.name, `Results:\n========== Page ${ pageNumber } of ${ Math.ceil(resultsLength / resultsPerPage) } ==========${ printResults }\n== \`\\fs buy [item] [page]\` for more ==`);
             }
+        }
             else if ((cmd.args[0] == "sell") || (cmd.args[0] == "sl")) {
                 // Find shops buying search_item
                 const search_item = cmd.args[1];
 
-                const shops = await fetchData();
+                // @ts-ignore
+                const shops = await db_shops.find().toArray();
                 const results = [];
                 for (const shop of shops) {
                     for (const item of shop.items) {
@@ -178,25 +177,32 @@ sc.on("command", async (cmd) => {
                     await sc.tell(cmd.user.name, `**Error!** FindShop was unable to find any shops buying \`${ search_item }\`. [Why are shops and items missing?](${help_link})`);
                 }
                 else {
-                    let printResults = "";
+                    const resultsLength = results.length;
 
-                    if (results.length > 5) {
-                        await sc.tell(cmd.user.name, "**Note:** Too many results found. Shorting the list to the first 5 results.");
-                        results.length = 5;
+                    let pageNumber = 1;
+                    if (cmd.args[2]) {
+                        pageNumber = Number(cmd.args[2]);
+                        results.splice(0, resultsPerPage * (pageNumber - 1));
                     }
 
+                    if (results.length > resultsPerPage) {
+                        results.length = resultsPerPage;
+                    }
+
+                    let printResults = "";
                     for (const result of results) {
                         printResults += `\n\`${ result.item.item.name }\` at **${ result.shop.name }** (\`${ genCoords(result.shop.location) }\`) for ${ fmt_price(result.item) }`;
                     }
 
-                    await sc.tell(cmd.user.name, `Here's what we found for \`${ search_item }\`: ${ printResults }`);
+                    await sc.tell(cmd.user.name, `Results:\n========== Page ${ pageNumber } of ${ Math.ceil(resultsLength / resultsPerPage) } ==========${ printResults }\n== \`\\fs sell [item] [page]\` for more ==`);
                 }
             }
             else if ((cmd.args[0] == "shop") || (cmd.args[0] == "sh")) {
                 // Find shop named search_name
                 const search_name = cmd.args[1];
 
-                const shops = await fetchData();
+                // @ts-ignore
+                const shops = await db_shops.find().toArray();
                 const results = [];
                 for (const shop of shops) {
                     if (shop.info.name.toLowerCase().includes(search_name.toLowerCase())) {
@@ -263,6 +269,10 @@ sc.on("command", async (cmd) => {
 
 sc.on("ready", () => {
     console.log("Started FindShop Chatbox Server!");
+});
+
+process.on("exit", async () => {
+    await db_client.close();
 });
 
 sc.connect();
