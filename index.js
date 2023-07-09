@@ -22,8 +22,8 @@ import { MongoClient } from "mongodb";
 
 const sc = new Client(process.env.CB_KEY);
 const db_client = new MongoClient(process.env.DB_URI);
-const database = db_client.db(`Main_DB`);
-const db_shops = database.collection(`Main DB`);
+const database = db_client.db(`SC3`);
+const db_shops = database.collection(`RawShops`);
 
 const aliases = ["fs", "find", "findshop"];
 const resultsPerPage = 7;
