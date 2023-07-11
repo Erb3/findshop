@@ -42,7 +42,7 @@ function genCoords(location: Location): string {
 
     if (location) {
         if ((location.coordinates) && (location.coordinates.length === 3)) {
-            shopLocation = `${location.coordinates[0]} ${location.coordinates[1]} ${location.coordinates[2]}`
+            shopLocation = `${ Math.round(location.coordinates[0]) } ${ Math.round(location.coordinates[1]) } ${ Math.round(location.coordinates[2]) }`
         }
         else if (location.description) {
             shopLocation = location.description
