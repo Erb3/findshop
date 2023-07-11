@@ -19,25 +19,26 @@
 import "dotenv/config";
 import { Client } from "switchchat";
 import { MongoClient } from "mongodb";
+import { Location, Shop, Item } from "./types";
 
-const sc = new Client(process.env.CB_KEY);
-const db_client = new MongoClient(process.env.DB_URI);
+const sc: Client = new Client(<string>process.env.CB_KEY);
+const db_client: MongoClient = new MongoClient(<string>process.env.DB_URI);
 const database = db_client.db(`SC3`);
-const db_shops = database.collection(`RawShops`);
+const db_shops = database.collection<Shop>(`RawShops`);
 
-const aliases = ["fs", "find", "findshop"];
-const resultsPerPage = 7;
-const help_link = "https://github.com/slimit75/FindShop/wiki/Why-are-shops-and-items-missing%3F";
+const aliases: string[] = ["fs", "find", "findshop"];
+const resultsPerPage: number = 7;
+const help_link: string = "https://github.com/slimit75/FindShop/wiki/Why-are-shops-and-items-missing%3F";
 
 sc.defaultName = "&6&lFindShop";
 sc.defaultFormattingMode = "markdown";
 
 /**
-* Generates human-readable coordinates
-* @param location Input coordinates from shop
-*/
-function genCoords(location) {
-    let shopLocation = "Unknown";
+ * Generates human-readable coordinates
+ * @param location Input coordinates from shop
+ */
+function genCoords(location: Location): string {
+    let shopLocation: string = "Unknown";
 
     if (location) {
         if ((location.coordinates) && (location.coordinates.length === 3)) {
@@ -52,10 +53,10 @@ function genCoords(location) {
 }
 
 /**
-* Generates human-readable prices
-* @param item Input item from shop
-*/
-function fmt_price(item) {
+ * Generates human-readable prices
+ * @param item Input item from shop
+ */
+function fmt_price(item: Item): string {
     if (item.dynamicPrice) {
         return `\`${ item.prices[0].value }*\` ${ item.prices[0].currency }`
     }
@@ -79,10 +80,10 @@ sc.on("command", async (cmd) => {
             }
             else if ((cmd.args[0] === "list") || (cmd.args[0] === "l")) {
                 // List shops
-                const shops = await db_shops.find({}, { collation: { locale: "en_US", strength: 2 }}).sort({ "info.name": 1 }).toArray();
-                const resultsLength = shops.length;
+                const shops: Array<Shop> = await db_shops.find({}, { collation: { locale: "en_US", strength: 2 }}).sort({ "info.name": 1 }).toArray();
+                const resultsLength: number = shops.length;
 
-                let pageNumber = 1;
+                let pageNumber: number = 1;
                 if (cmd.args[1]) {
                     pageNumber = Number(cmd.args[1]);
                     shops.splice(0, 10 * (pageNumber - 1));
@@ -92,7 +93,7 @@ sc.on("command", async (cmd) => {
                     shops.length = 10;
                 }
 
-                let printResults = "";
+                let printResults: string = "";
                 for (const shop of shops) {
                     printResults += `\n**${ shop.info.name }** at \`${ genCoords(shop.info.location) }\``;
                 }
@@ -101,13 +102,13 @@ sc.on("command", async (cmd) => {
             }
             else if ((cmd.args[0] === "buy") || (cmd.args[0] === "b") || (cmd.args[1] == null)) {
                 // Find shops selling search_item
-                let search_item = cmd.args[1];
+                let search_item: string = cmd.args[1];
                 if (cmd.args[1] == null) {
                     search_item = cmd.args[0];
                 }
 
-                const shops = await db_shops.find({ $text: { $search: search_item } }).toArray();
-                const results = [];
+                const shops: Array<Shop> = await db_shops.find({ $text: { $search: search_item } }).toArray();
+                const results: Array<any> = [];
                 for (const shop of shops) {
                     // Check item length because if this is zero, it will crash!!! Thanks books.kst
                     if (shop.items.length > 0) {
@@ -132,32 +133,28 @@ sc.on("command", async (cmd) => {
                     await sc.tell(cmd.user.name, `**Error!** FindShop was unable to find any shops with \`${ search_item }\` in stock. [Why are shops and items missing?](${help_link})`);
                 }
                 else {
-                    const resultsLength = results.length;
+                    const resultsLength: number = results.length;
 
-                    let pageNumber = 1;
+                    let pageNumber: number = 1;
                     if (cmd.args[2]) {
                         pageNumber = Number(cmd.args[2]);
                         results.splice(0, resultsPerPage * (pageNumber - 1));
                     }
 
-                if (results.length > resultsPerPage) {
-                    results.length = resultsPerPage;
-                }
+                    let printResults: string = "";
+                    for (const result of results) {
+                        printResults += `\n\`${ result.item.item.name }\` at **${ result.shop.name }** (\`${ genCoords(result.shop.location) }\`) for ${ fmt_price(result.item) } (\`${ result.item.stock }\` in stock)`;
+                    }
 
-                let printResults = "";
-                for (const result of results) {
-                    printResults += `\n\`${ result.item.item.name }\` at **${ result.shop.name }** (\`${ genCoords(result.shop.location) }\`) for ${ fmt_price(result.item) } (\`${ result.item.stock }\` in stock)`;
+                    await sc.tell(cmd.user.name, `Results:\n========== Page ${ pageNumber } of ${ Math.ceil(resultsLength / resultsPerPage) } ==========${ printResults }\n== \`\\fs buy [item] [page]\` for more ==`);
                 }
-
-                await sc.tell(cmd.user.name, `Results:\n========== Page ${ pageNumber } of ${ Math.ceil(resultsLength / resultsPerPage) } ==========${ printResults }\n== \`\\fs buy [item] [page]\` for more ==`);
             }
-        }
             else if ((cmd.args[0] === "sell") || (cmd.args[0] === "sl")) {
                 // Find shops buying search_item
-                const search_item = cmd.args[1];
+                const search_item: string = cmd.args[1];
 
-                const shops = await db_shops.find({ "items.shopBuysItem": true, $text: { $search: search_item } }).toArray();
-                const results = [];
+                const shops: Array<Shop> = await db_shops.find({ "items.shopBuysItem": true, $text: { $search: search_item } }).toArray();
+                const results: Array<any> = [];
                 for (const shop of shops) {
                     for (const item of shop.items) {
                         if (item.item.name == null) {
@@ -176,9 +173,9 @@ sc.on("command", async (cmd) => {
                     await sc.tell(cmd.user.name, `**Error!** FindShop was unable to find any shops buying \`${ search_item }\`. [Why are shops and items missing?](${help_link})`);
                 }
                 else {
-                    const resultsLength = results.length;
+                    const resultsLength: number = results.length;
 
-                    let pageNumber = 1;
+                    let pageNumber: number = 1;
                     if (cmd.args[2]) {
                         pageNumber = Number(cmd.args[2]);
                         results.splice(0, resultsPerPage * (pageNumber - 1));
@@ -188,7 +185,7 @@ sc.on("command", async (cmd) => {
                         results.length = resultsPerPage;
                     }
 
-                    let printResults = "";
+                    let printResults: string = "";
                     for (const result of results) {
                         printResults += `\n\`${ result.item.item.name }\` at **${ result.shop.name }** (\`${ genCoords(result.shop.location) }\`) for ${ fmt_price(result.item) }`;
                     }
@@ -198,28 +195,28 @@ sc.on("command", async (cmd) => {
             }
             else if ((cmd.args[0] === "shop") || (cmd.args[0] === "sh")) {
                 // Find shop named search_name
-                const search_name = cmd.args[1];
+                const search_name: string = cmd.args[1];
 
-                const results = await db_shops.find({ $text: { $search: search_name } }).toArray();
+                const results: Array<Shop> = await db_shops.find({ $text: { $search: search_name } }).toArray();
 
-                if (results.length === 0) {
+                if (results.length == 0) {
                     await sc.tell(cmd.user.name, `**Error!** FindShop was unable to find any shops named \`${ search_name }\`. [Why are shops and items missing?](${help_link})`);
                 }
                 else {
-                    let printResults = "";
+                    let printResults: string = "";
                     if (((results.length > 1) && (cmd.args[2] == null)) || ((cmd.args[2] != null) && (Number(cmd.args[2]) > results.length))) {
-                        for (let i = 0; i < results.length; i++) {
+                        for (let i: number = 0; i < results.length; i++) {
                             printResults += `\n(\`${ i + 1 }\`) ${ results[i].info.name }`
                         }
 
                         await sc.tell(cmd.user.name, `Multiple shops were found. Run \`\\fs sh ${ search_name } [number]\` to see specific information. ${ printResults }`);
                     }
                     else {
-                        let display_shop_idx = 1;
+                        let display_shop_idx: number = 1;
                         if (cmd.args[2] != null) {
                             display_shop_idx = Number(cmd.args[2]);
                         }
-                        const display_shop = results[display_shop_idx - 1];
+                        const display_shop: Shop = results[display_shop_idx - 1];
 
                         printResults = `**${ display_shop.info.name }**`;
                         if (display_shop.info.owner) {

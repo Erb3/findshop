@@ -1,4 +1,11 @@
+# Package Manager
 node_modules
-.idea
+package-lock.json
 yarn.lock
+
+# IDEs
+.idea
+
+# Other
 .env
+*.js
