@@ -42,10 +42,15 @@ function genCoords(location: ShopLocation): string {
 
     if (location) {
         if ((location.coordinates) && (location.coordinates.length === 3)) {
-            shopLocation = `${ Math.round(location.coordinates[0]) } ${ Math.round(location.coordinates[1]) } ${ Math.round(location.coordinates[2]) }`
+            shopLocation = `\`${ Math.round(location.coordinates[0]) } ${ Math.round(location.coordinates[1]) } ${ Math.round(location.coordinates[2]) }\``;
         }
         else if (location.description) {
-            shopLocation = location.description
+            if (location.description.startsWith("http")) {
+                shopLocation = location.description
+            }
+            else {
+                shopLocation = `\`${location.description}\``
+            }
         }
     }
 
@@ -141,7 +146,7 @@ sc.on("command", async (cmd) => {
 
                 let printResults: string = "";
                 for (const shop of shops) {
-                    printResults += `\n**${ shop.info.name }** at \`${ genCoords(shop.info.location) }\``;
+                    printResults += `\n**${ shop.info.name }** at ${ genCoords(shop.info.location) }`;
                 }
 
                 await sc.tell(cmd.user.name, `Results:\n${fmt_header(`Page ${ pageNumber } of ${ Math.ceil(resultsLength / 10)}`)} ${printResults}\n ${fmt_header("`\\fs list [page]` for more")}`);
@@ -188,7 +193,7 @@ sc.on("command", async (cmd) => {
 
                     let printResults: string = "";
                     for (const result of results) {
-                        printResults += `\n\`${ result.item.item.name }\` at **${ result.shop.name }** (\`${ genCoords(result.shop.location) }\`) for ${ fmt_price(result.item) } (\`${ result.item.stock }\` in stock)`;
+                        printResults += `\n\`${ result.item.item.name }\` at **${ result.shop.name }** (${ genCoords(result.shop.location) }) for ${ fmt_price(result.item) } (\`${ result.item.stock }\` in stock)`;
                     }
 
                     await sc.tell(cmd.user.name, `Results:\n${fmt_header(`Page ${ pageNumber } of ${ Math.ceil(resultsLength / resultsPerPage) }`)} ${ printResults }\n${fmt_header("`\\fs buy [item] [page]` for more")}`);
@@ -227,7 +232,7 @@ sc.on("command", async (cmd) => {
 
                     let printResults: string = "";
                     for (const result of results) {
-                        printResults += `\n\`${ result.item.item.name }\` at **${ result.shop.name }** (\`${ genCoords(result.shop.location) }\`) for ${ fmt_price(result.item) }`;
+                        printResults += `\n\`${ result.item.item.name }\` at **${ result.shop.name }** (${ genCoords(result.shop.location) }) for ${ fmt_price(result.item) }`;
                     }
 
                     await sc.tell(cmd.user.name, `Results:\n${fmt_header(`Page ${ pageNumber } of ${ Math.ceil(resultsLength / resultsPerPage) }`)}${ printResults }\n${fmt_header("`\\fs sell [item] [page]` for more")}`);
@@ -265,7 +270,7 @@ sc.on("command", async (cmd) => {
                         printResults += `\n`;
 
                         if (display_shop.info.location) {
-                            printResults += `Located at \`${ genCoords(display_shop.info.location) }\``
+                            printResults += `Located at ${ genCoords(display_shop.info.location) }`
                             if (display_shop.info.location.dimension) {
                                 printResults += ` in the \`${ display_shop.info.location.dimension }\``
                             }
