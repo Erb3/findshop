@@ -141,6 +141,10 @@ sc.on("command", async (cmd) => {
                         results.splice(0, resultsPerPage * (pageNumber - 1));
                     }
 
+                    if (results.length > resultsPerPage) {
+                        results.length = resultsPerPage;
+                    }
+
                     let printResults: string = "";
                     for (const result of results) {
                         printResults += `\n\`${ result.item.item.name }\` at **${ result.shop.name }** (\`${ genCoords(result.shop.location) }\`) for ${ fmt_price(result.item) } (\`${ result.item.stock }\` in stock)`;
