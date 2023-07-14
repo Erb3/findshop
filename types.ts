@@ -17,14 +17,14 @@
  */
 
 // Location of a shop. All fields are optional.
-export interface Location {
+export interface ShopLocation {
     coordinates?: number[],
     description?: string,
     dimension?: string
 }
 
 // Structure of the shop item object.
-export interface Item {
+export interface ShopItem {
     prices: {
         value: number,
         currency: string,
@@ -44,22 +44,30 @@ export interface Item {
     noLimit?: boolean
 }
 
+// Structure of the shop info object.
+export interface ShopInfo {
+    name: string,
+    description?: string,
+    owner?: string,
+    computerID?: number,
+    multiShop?: number,
+    software?: {
+        name?: string,
+        version?: string
+    },
+    location: ShopLocation,
+    otherLocations?: ShopLocation[],
+}
+
 // Structure of the shop object.
 export interface Shop {
     type: string,
-    info: {
-        name: string,
-        description?: string,
-        owner?: string,
-        computerID?: number,
-        multiShop?: number,
-        software?: {
-            name?: string,
-            version?: string
-        },
-        location: Location,
-        otherLocations?: Location[],
+    info: ShopInfo,
+    items: ShopItem[]
+}
 
-    }
-    items: Item[]
+// Structure of the 'search results' object
+export interface SearchResults {
+    shop: ShopInfo,
+    item: ShopItem
 }

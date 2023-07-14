@@ -19,7 +19,7 @@
 import "dotenv/config";
 import { Client } from "switchchat";
 import { MongoClient } from "mongodb";
-import { Location, Shop, Item } from "./types";
+import {ShopLocation, Shop, ShopItem, SearchResults} from "./types";
 
 const sc: Client = new Client(<string>process.env.CB_KEY);
 const db_client: MongoClient = new MongoClient(<string>process.env.DB_URI);
@@ -37,7 +37,7 @@ sc.defaultFormattingMode = "markdown";
  * Generates human-readable coordinates
  * @param location Input coordinates from shop
  */
-function genCoords(location: Location): string {
+function genCoords(location: ShopLocation): string {
     let shopLocation: string = "Unknown";
 
     if (location) {
@@ -56,13 +56,59 @@ function genCoords(location: Location): string {
  * Generates human-readable prices
  * @param item Input item from shop
  */
-function fmt_price(item: Item): string {
+function fmt_price(item: ShopItem): string {
     if (item.dynamicPrice) {
         return `\`${ item.prices[0].value }*\` ${ item.prices[0].currency }`
     }
     else {
         return `\`${ item.prices[0].value }\` ${ item.prices[0].currency }`
     }
+}
+
+/**
+ * Handles different pages
+ * @param input
+ * @param pageNum
+ */
+function pg_handler(input: Array<SearchResults>, pageNum?: string): { pageNumber: number, results: SearchResults[] } {
+    let pageNumber: number = 1;
+    if (pageNum) {
+        pageNumber = Number(pageNum);
+        input.splice(0, resultsPerPage * (pageNumber - 1));
+    }
+
+    if (input.length > resultsPerPage) {
+        input.length = resultsPerPage;
+    }
+
+    return {
+        pageNumber: pageNumber,
+        results: input
+    };
+}
+
+function fmt_header(input_str: string): string {
+    let barSize: number = 50 - 1;
+    const short: string[] = ["l", "i", "t", "[", "]", " "];
+
+    for (let i = 0; i < input_str.length; i++) {
+        if (short.includes(input_str[i])) {
+            barSize -= 0.4;
+        }
+        else {
+            barSize--;
+        }
+    }
+
+    barSize = Math.ceil(barSize / 2);
+
+    let barText: string = "";
+
+    for (let i = 0; i < barSize; i++) {
+        barText += "=";
+    }
+
+    return `${barText} ${input_str} ${barText}`;
 }
 
 // Chatbox Command Handler
@@ -98,7 +144,7 @@ sc.on("command", async (cmd) => {
                     printResults += `\n**${ shop.info.name }** at \`${ genCoords(shop.info.location) }\``;
                 }
 
-                await sc.tell(cmd.user.name, `Results:\n========== Page ${ pageNumber } of ${ Math.ceil(resultsLength / 10) } ==========${ printResults }\n===== \`\\fs list [page]\` for more =====`);
+                await sc.tell(cmd.user.name, `Results:\n${fmt_header(`Page ${ pageNumber } of ${ Math.ceil(resultsLength / 10)}`)} ${printResults}\n ${fmt_header("`\\fs list [page]` for more")}`);
             }
             else if ((cmd.args[0] === "buy") || (cmd.args[0] === "b") || (cmd.args[1] == null)) {
                 // Find shops selling search_item
@@ -108,7 +154,7 @@ sc.on("command", async (cmd) => {
                 }
 
                 const shops: Array<Shop> = await db_shops.find({ $text: { $search: search_item } }).toArray();
-                const results: Array<any> = [];
+                let results: Array<SearchResults> = [];
                 for (const shop of shops) {
                     // Check item length because if this is zero, it will crash!!! Thanks books.kst
                     if (shop.items.length > 0) {
@@ -135,22 +181,16 @@ sc.on("command", async (cmd) => {
                 else {
                     const resultsLength: number = results.length;
 
-                    let pageNumber: number = 1;
-                    if (cmd.args[2]) {
-                        pageNumber = Number(cmd.args[2]);
-                        results.splice(0, resultsPerPage * (pageNumber - 1));
-                    }
-
-                    if (results.length > resultsPerPage) {
-                        results.length = resultsPerPage;
-                    }
+                    const handler_out = pg_handler(results, cmd.args[2]);
+                    results = handler_out.results;
+                    const pageNumber = handler_out.pageNumber;
 
                     let printResults: string = "";
                     for (const result of results) {
                         printResults += `\n\`${ result.item.item.name }\` at **${ result.shop.name }** (\`${ genCoords(result.shop.location) }\`) for ${ fmt_price(result.item) } (\`${ result.item.stock }\` in stock)`;
                     }
 
-                    await sc.tell(cmd.user.name, `Results:\n========== Page ${ pageNumber } of ${ Math.ceil(resultsLength / resultsPerPage) } ==========${ printResults }\n== \`\\fs buy [item] [page]\` for more ==`);
+                    await sc.tell(cmd.user.name, `Results:\n${fmt_header(`Page ${ pageNumber } of ${ Math.ceil(resultsLength / resultsPerPage) }`)} ${ printResults }\n${fmt_header("`\\fs buy [item] [page]` for more")}`);
                 }
             }
             else if ((cmd.args[0] === "sell") || (cmd.args[0] === "sl")) {
@@ -158,7 +198,7 @@ sc.on("command", async (cmd) => {
                 const search_item: string = cmd.args[1];
 
                 const shops: Array<Shop> = await db_shops.find({ "items.shopBuysItem": true, $text: { $search: search_item } }).toArray();
-                const results: Array<any> = [];
+                let results: Array<SearchResults> = [];
                 for (const shop of shops) {
                     for (const item of shop.items) {
                         if (item.item.name == null) {
@@ -179,22 +219,16 @@ sc.on("command", async (cmd) => {
                 else {
                     const resultsLength: number = results.length;
 
-                    let pageNumber: number = 1;
-                    if (cmd.args[2]) {
-                        pageNumber = Number(cmd.args[2]);
-                        results.splice(0, resultsPerPage * (pageNumber - 1));
-                    }
-
-                    if (results.length > resultsPerPage) {
-                        results.length = resultsPerPage;
-                    }
+                    const handler_out = pg_handler(results, cmd.args[2]);
+                    results = handler_out.results;
+                    const pageNumber = handler_out.pageNumber;
 
                     let printResults: string = "";
                     for (const result of results) {
                         printResults += `\n\`${ result.item.item.name }\` at **${ result.shop.name }** (\`${ genCoords(result.shop.location) }\`) for ${ fmt_price(result.item) }`;
                     }
 
-                    await sc.tell(cmd.user.name, `Results:\n========== Page ${ pageNumber } of ${ Math.ceil(resultsLength / resultsPerPage) } ==========${ printResults }\n== \`\\fs sell [item] [page]\` for more ==`);
+                    await sc.tell(cmd.user.name, `Results:\n${fmt_header(`Page ${ pageNumber } of ${ Math.ceil(resultsLength / resultsPerPage) }`)}${ printResults }\n${fmt_header("`\\fs sell [item] [page]` for more")}`);
                 }
             }
             else if ((cmd.args[0] === "shop") || (cmd.args[0] === "sh")) {
