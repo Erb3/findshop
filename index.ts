@@ -163,6 +163,7 @@ sc.on("command", async (cmd) => {
                                 console.warn(`A shop (${shop.info.name}) is missing an item name!!`);
                             }
                             else if (((item.item.name.toLowerCase().includes(search_item.toLowerCase())) || (item.item.displayName.toLowerCase().includes(search_item.toLowerCase()))) && (!item.shopBuysItem) && ((item.stock !== 0) || (item.madeOnDemand))) {
+                                item.item.name = item.item.name.replace('minecraft:','');
                                 results.push({
                                     shop: shop.info,
                                     item: item
@@ -205,6 +206,7 @@ sc.on("command", async (cmd) => {
                             console.warn(`A shop (${shop.info.name}) is missing an item name!!`);
                         }
                         else if ((item.item.name.toLowerCase().includes(search_item.toLowerCase()) || item.item.displayName.toLowerCase().includes(search_item.toLowerCase())) && item.shopBuysItem) {
+                            item.item.name = item.item.name.replace('minecraft:','');
                             results.push({
                                 shop: shop.info,
                                 item: item
