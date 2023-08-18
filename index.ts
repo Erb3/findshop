@@ -121,6 +121,7 @@ sc.on("command", async (cmd) => {
 	if (aliases.includes(cmd.command)) {
 		console.debug(`${cmd.user.name}: ${ cmd.args.join(" ")}`);
 		try {
+			const shops: Array<shop_t> = await db_shops.find({}, { collation: { locale: "en_US", strength: 2 }}).sort({ "info.name": 1 }).toArray();
 			if ((cmd.args[0] == null) || (cmd.args[0] === "help")) {
 				// Help message
 				await sc.tell(cmd.user.name, `FindShop helps locate ShopSync-compatible shops buying or selling an item.\n\`\\fs list\` - List detected shops\n\`\\fs stats\` - Statistics (currently only shop count)\n\`\\fs buy [item]\` - Finds shops selling *[item]*\n\`\\fs sell [item]\` - Finds shops buying *[item]*\n\`\\fs shop [name]\` - Finds shops named *[name]* and their info`)
@@ -131,7 +132,6 @@ sc.on("command", async (cmd) => {
 			}
 			else if ((cmd.args[0] === "list") || (cmd.args[0] === "l")) {
 				// List shops
-				const shops: Array<shop_t> = await db_shops.find({}, { collation: { locale: "en_US", strength: 2 }}).sort({ "info.name": 1 }).toArray();
 				const resultsLength: number = shops.length;
 
 				let pageNumber: number = 1;
@@ -158,7 +158,6 @@ sc.on("command", async (cmd) => {
 					search_item = cmd.args[0];
 				}
 
-				const shops: Array<shop_t> = await db_shops.find({ $text: { $search: search_item } }).toArray();
 				let results: Array<search_results_t> = [];
 				for (const shop of shops) {
 					// Check item length because if this is zero, it will crash!!! Thanks books.kst
@@ -203,7 +202,6 @@ sc.on("command", async (cmd) => {
 				// Find shops buying search_item
 				const search_item: string = cmd.args[1];
 
-				const shops: Array<shop_t> = await db_shops.find({ "items.shopBuysItem": true, $text: { $search: search_item } }).toArray();
 				let results: Array<search_results_t> = [];
 				for (const shop of shops) {
 					for (const item of shop.items) {
@@ -242,7 +240,12 @@ sc.on("command", async (cmd) => {
 				// Find shop named search_name
 				const search_name: string = cmd.args[1];
 
-				const results: Array<shop_t> = await db_shops.find({ $text: { $search: search_name } }).toArray();
+				const results: Array<shop_t> = [];
+				for (const shop of shops) {
+					if (shop.info.name.toLowerCase().includes(search_name.toLowerCase())) {
+						results.push(shop)
+					}
+				}
 
 				if (results.length == 0) {
 					await sc.tell(cmd.user.name, `**Error!** FindShop was unable to find any shops named \`${ search_name }\`. [Why are shops and items missing?](${help_link})`);
