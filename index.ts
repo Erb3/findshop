@@ -26,7 +26,7 @@ const db_client: MongoClient = new MongoClient(<string>process.env.DB_URI);
 const database = db_client.db(`SC3`);
 const db_shops = database.collection<shop_t>(`RawShops`);
 
-const aliases: string[] = ["fs-test", "find-test", "findshop-test"];
+const aliases: string[] = ["fs", "find", "findshop"];
 const resultsPerPage: number = 7;
 const help_link: string = "https://github.com/slimit75/FindShop/wiki/Why-are-shops-and-items-missing%3F";
 
