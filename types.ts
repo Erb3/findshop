@@ -16,6 +16,12 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+// FindShop-specific data.
+export interface findshop_data_t {
+	computerID: number,
+	lastSeen: number
+}
+
 // Location of a shop. All fields are optional.
 export interface shop_loc_t {
 	coordinates?: number[],

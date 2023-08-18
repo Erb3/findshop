@@ -280,6 +280,8 @@ sc.on("command", async (cmd) => {
 							printResults += `\n`;
 						}
 
+						printResults += `Last seen \`${new Date(display_shop.findShop.lastSeen).toUTCString()}\`\n`;
+
 						if (display_shop.info.software) {
 							printResults += `Running \`${display_shop.info.software.name}\``;
 							if (display_shop.info.software.version) {
