@@ -70,6 +70,10 @@ function fmt_price(item: shop_item_t): string {
 	}
 }
 
+/**
+ * Formats shop names in results
+ * @param shop Shop to format
+ */
 function fmt_name(shop: shop_t): string {
 	let base_str: string = shop.info.name;
 
@@ -102,6 +106,10 @@ function pg_handler(input: Array<search_results_t>, pageNum?: string): { pageNum
 	};
 }
 
+/**
+ * Format header & footer lines in chatbox messages
+ * @param input_str String to place in the middle of the header/footer
+ */
 function fmt_header(input_str: string): string {
 	let barSize: number = 50 - 1;
 	const short: string[] = ["l", "i", "t", "[", "]", " "];
