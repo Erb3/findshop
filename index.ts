@@ -70,6 +70,16 @@ function fmt_price(item: shop_item_t): string {
 	}
 }
 
+function fmt_name(shop: shop_t): string {
+	let base_str: string = shop.info.name;
+
+	if (shop.findShop.lastSeen <= Date.now() - 604800000) {
+		base_str += "🕐";
+	}
+
+	return `**${base_str}**`;
+}
+
 /**
  * Handles different pages
  * @param input
@@ -146,7 +156,7 @@ sc.on("command", async (cmd) => {
 
 				let printResults: string = "";
 				for (const shop of shops) {
-					printResults += `\n**${shop.info.name}** at ${fmt_loc(shop.info.location)}`;
+					printResults += `\n${fmt_name(shop)} at ${fmt_loc(shop.info.location)}`;
 				}
 
 				await sc.tell(cmd.user.name, `Results:\n${fmt_header(`Page ${pageNumber} of ${Math.ceil(resultsLength / 10)}`)} ${printResults}\n ${fmt_header("`\\fs list [page]` for more")}`);
@@ -169,7 +179,7 @@ sc.on("command", async (cmd) => {
 							else if (((item.item.name.toLowerCase().includes(search_item.toLowerCase())) || (item.item.displayName.toLowerCase().includes(search_item.toLowerCase()))) && (!item.shopBuysItem) && ((item.stock !== 0) || (item.madeOnDemand))) {
 								item.item.name = item.item.name.replace('minecraft:','');
 								results.push({
-									shop: shop.info,
+									shop: shop,
 									item: item
 								})
 							}
@@ -192,7 +202,7 @@ sc.on("command", async (cmd) => {
 
 					let printResults: string = "";
 					for (const result of results) {
-						printResults += `\n\`${result.item.item.name}\` at **${result.shop.name}** (${fmt_loc(result.shop.location)}) for ${fmt_price(result.item)} (\`${result.item.stock}\` in stock)`;
+						printResults += `\n\`${result.item.item.name}\` at ${fmt_name(result.shop)} (${fmt_loc(result.shop.info.location)}) for ${fmt_price(result.item)} (\`${result.item.stock}\` in stock)`;
 					}
 
 					await sc.tell(cmd.user.name, `Results:\n${fmt_header(`Page ${pageNumber} of ${Math.ceil(resultsLength / resultsPerPage)}`)} ${printResults}\n${fmt_header("`\\fs buy [item] [page]` for more")}`);
@@ -211,7 +221,7 @@ sc.on("command", async (cmd) => {
 						else if ((item.item.name.toLowerCase().includes(search_item.toLowerCase()) || item.item.displayName.toLowerCase().includes(search_item.toLowerCase())) && item.shopBuysItem) {
 							item.item.name = item.item.name.replace('minecraft:','');
 							results.push({
-								shop: shop.info,
+								shop: shop,
 								item: item
 							})
 						}
@@ -230,7 +240,7 @@ sc.on("command", async (cmd) => {
 
 					let printResults: string = "";
 					for (const result of results) {
-						printResults += `\n\`${ result.item.item.name }\` at **${result.shop.name}** (${fmt_loc(result.shop.location)}) for ${fmt_price(result.item)}`;
+						printResults += `\n\`${ result.item.item.name }\` at ${fmt_name(result.shop)} (${fmt_loc(result.shop.info.location)}) for ${fmt_price(result.item)}`;
 					}
 
 					await sc.tell(cmd.user.name, `Results:\n${fmt_header(`Page ${pageNumber} of ${ Math.ceil(resultsLength / resultsPerPage) }`)}${printResults}\n${fmt_header("`\\fs sell [item] [page]` for more")}`);
@@ -254,7 +264,7 @@ sc.on("command", async (cmd) => {
 					let printResults: string = "";
 					if (((results.length > 1) && (cmd.args[2] == null)) || ((cmd.args[2] != null) && (Number(cmd.args[2]) > results.length))) {
 						for (let i: number = 0; i < results.length; i++) {
-							printResults += `\n(\`${ i + 1 }\`) ${ results[i].info.name }`
+							printResults += `\n(\`${ i + 1 }\`) ${ fmt_name(results[i]) }`
 						}
 
 						await sc.tell(cmd.user.name, `Multiple shops were found. Run \`\\fs sh ${search_name} [number]\` to see specific information. ${printResults}`);
@@ -266,7 +276,7 @@ sc.on("command", async (cmd) => {
 						}
 						const display_shop: shop_t = results[display_shop_idx - 1];
 
-						printResults = `**${display_shop.info.name}**`;
+						printResults = fmt_name(display_shop);
 						if (display_shop.info.owner) {
 							printResults += ` *by ${display_shop.info.owner}*`;
 						}

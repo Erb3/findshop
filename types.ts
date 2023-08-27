@@ -50,31 +50,28 @@ export interface shop_item_t {
 	noLimit?: boolean
 }
 
-// Structure of the shop info object.
-export interface shop_info_t {
-	name: string,
-	description?: string,
-	owner?: string,
-	computerID?: number,
-	multiShop?: number,
-	software?: {
-		name?: string,
-		version?: string
-	},
-	location: shop_loc_t,
-	otherLocations?: shop_loc_t[],
-}
-
 // Structure of the shop object.
 export interface shop_t {
 	type: string,
-	info: shop_info_t,
+	info: {
+		name: string,
+		description?: string,
+		owner?: string,
+		computerID?: number,
+		multiShop?: number,
+		software?: {
+			name?: string,
+			version?: string
+		},
+		location: shop_loc_t,
+		otherLocations?: shop_loc_t[],
+	},
 	items: shop_item_t[],
 	findShop: findshop_data_t
 }
 
 // Structure of the 'search results' object
 export interface search_results_t {
-	shop: shop_info_t,
+	shop: shop_t,
 	item: shop_item_t
 }
