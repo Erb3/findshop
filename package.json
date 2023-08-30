@@ -9,7 +9,7 @@
   "type": "commonjs",
   "dependencies": {
     "dotenv": "^16.3.1",
-    "mongodb": "^5.7.0",
+    "mongodb": "^5.8.0",
     "switchchat": "^3.2.1"
   },
   "scripts": {
