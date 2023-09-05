@@ -13,7 +13,7 @@
     "switchchat": "^3.2.1"
   },
   "scripts": {
-    "build": "npx tsc index.ts",
+    "build": "npx tsc --project tsconfig.json",
     "restart": "pm2 restart 0",
     "start": "pm2 start 0",
     "stop": "pm2 stop 0"

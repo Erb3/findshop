@@ -7,3 +7,5 @@ node_modules
 # Other
 .env
 *.js
+/index.js.map
+/types.js.map
