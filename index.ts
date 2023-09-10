@@ -32,6 +32,15 @@ const help_link: string = "https://github.com/slimit75/FindShop/wiki/Why-are-sho
 sc.defaultName = "&6&lFindShop";
 sc.defaultFormattingMode = "markdown";
 
+const help_msg: string = `a tool to locate ShopSync-compatible shops selling what you need or buying what you have.
+
+    &6buy     &7item      &f&oSearch for shops selling &7&oitem
+    &6sell     &7item      &f&oSearch for shops buying &7&oitem
+    &6shop   &7shop     &f&oSearch for &7&oshop
+    
+    &6list                &f&oList available shops
+    &6stats             &f&oView a stats dashboard`;
+
 /**
  * Generates human-readable coordinates
  * @param location Input coordinates from shop
@@ -120,27 +129,40 @@ function pg_handler(input: Array<search_results_t>, pageNum?: string): { pageNum
  * @param input_str String to place in the middle of the header/footer
  */
 function fmt_header(input_str: string): string {
-	let barSize: number = 50 - 1;
-	const short: string[] = ["l", "i", "t", "[", "]", " "];
-
+	let barSize: number = 49;
 	for (let i: number = 0; i < input_str.length; i++) {
-		if (short.includes(input_str[i])) {
-			barSize -= 0.4;
-		}
-		else {
-			barSize--;
+		switch (input_str[i]) {
+			case "l":
+			case "i":
+			case "t":
+				barSize -= 0.25;
+				break;
+			case "[":
+			case "]":
+			case " ":
+				barSize -= 0.5;
+				break;
+			default:
+				barSize--;
 		}
 	}
 
 	barSize = Math.ceil(barSize / 2);
 
 	let barText: string = "";
-
 	for (let i = 0; i < barSize; i++) {
 		barText += "=";
 	}
-
 	return `${barText} ${input_str} ${barText}`;
+}
+
+/**
+ * Handle subcommands
+ * @param user_entry Subcommand specified by the user
+ * @param check_list Valid subcommands for this action
+ */
+function subcmd_handler(user_entry: string, check_list: Array<any>): boolean {
+	return check_list.includes(user_entry);
 }
 
 // Chatbox Command Handler
@@ -149,15 +171,15 @@ sc.on("command", async (cmd) => {
 		console.debug(`${cmd.user.name}: ${ cmd.args.join(" ")}`);
 		try {
 			const shops: Array<shop_t> = await db_shops.find({}, { collation: { locale: "en_US", strength: 2 }}).sort({ "info.name": 1 }).toArray();
-			if ((cmd.args[0] == null) || (cmd.args[0] === "help")) {
+			if (subcmd_handler(cmd.args[0], [null, "help", "hp"])) {
 				// Help message
-				await sc.tell(cmd.user.name, `FindShop helps locate ShopSync-compatible shops buying or selling an item.\n\`\\fs list\` - List detected shops\n\`\\fs stats\` - Statistics (currently only shop count)\n\`\\fs buy [item]\` - Finds shops selling *[item]*\n\`\\fs sell [item]\` - Finds shops buying *[item]*\n\`\\fs shop [name]\` - Finds shops named *[name]* and their info`)
+				await sc.tell(cmd.user.name, help_msg, sc.defaultName, "format");
 			}
-			else if (cmd.args[0] === "stats") {
+			else if (subcmd_handler(cmd.args[0], ["stats", "st"])) {
 				// Link to stats dashboard
 				await sc.tell(cmd.user.name, `Detailed shop statistics can be viewed [here](https://charts.mongodb.com/charts-findshop-lwmvk/public/dashboards/649f2873-58ae-45ef-8079-03201394a531).`);
 			}
-			else if ((cmd.args[0] === "list") || (cmd.args[0] === "l")) {
+			else if (subcmd_handler(cmd.args[0], ["list", "ls"])) {
 				// List shops
 				const resultsLength: number = shops.length;
 
@@ -176,14 +198,11 @@ sc.on("command", async (cmd) => {
 					printResults += `\n${fmt_name(shop)} at ${fmt_loc(shop.info.location)}`;
 				}
 
-				await sc.tell(cmd.user.name, `Results:\n${fmt_header(`Page ${pageNumber} of ${Math.ceil(resultsLength / 10)}`)} ${printResults}\n ${fmt_header("`\\fs list [page]` for more")}`);
+				await sc.tell(cmd.user.name, `Results:\n${fmt_header(`Page ${pageNumber} of ${Math.ceil(resultsLength / 10)}`)} ${printResults}\n ${fmt_header(`\`\\${aliases[0]} list [page]\` for more`)}`);
 			}
-			else if ((cmd.args[0] === "buy") || (cmd.args[0] === "b") || (cmd.args[1] == null)) {
+			else if (subcmd_handler(cmd.args[0], ["buy", "by"])) {
 				// Find shops selling search_item
-				let search_item: string = cmd.args[1];
-				if (cmd.args[1] == null) {
-					search_item = cmd.args[0];
-				}
+				const search_item: string = cmd.args[1];
 
 				let results: Array<search_results_t> = [];
 				for (const shop of shops) {
@@ -222,10 +241,10 @@ sc.on("command", async (cmd) => {
 						printResults += `\n\`${result.item.item.name}\` at ${fmt_name(result.shop)} (${fmt_loc(result.shop.info.location)}) for ${fmt_price(result.item)} (\`${result.item.stock}\` in stock)`;
 					}
 
-					await sc.tell(cmd.user.name, `Results:\n${fmt_header(`Page ${pageNumber} of ${Math.ceil(resultsLength / resultsPerPage)}`)} ${printResults}\n${fmt_header("`\\fs buy [item] [page]` for more")}`);
+					await sc.tell(cmd.user.name, `Results:\n${fmt_header(`Page ${pageNumber} of ${Math.ceil(resultsLength / resultsPerPage)}`)} ${printResults}\n${fmt_header(`\`\\${aliases[0]} buy [item] [page]\` for more`)}`);
 				}
 			}
-			else if ((cmd.args[0] === "sell") || (cmd.args[0] === "sl")) {
+			else if (subcmd_handler(cmd.args[0], ["sell", "sl"])) {
 				// Find shops buying search_item
 				const search_item: string = cmd.args[1];
 
@@ -260,10 +279,10 @@ sc.on("command", async (cmd) => {
 						printResults += `\n\`${ result.item.item.name }\` at ${fmt_name(result.shop)} (${fmt_loc(result.shop.info.location)}) for ${fmt_price(result.item)}`;
 					}
 
-					await sc.tell(cmd.user.name, `Results:\n${fmt_header(`Page ${pageNumber} of ${ Math.ceil(resultsLength / resultsPerPage) }`)}${printResults}\n${fmt_header("`\\fs sell [item] [page]` for more")}`);
+					await sc.tell(cmd.user.name, `Results:\n${fmt_header(`Page ${pageNumber} of ${ Math.ceil(resultsLength / resultsPerPage) }`)}${printResults}\n${fmt_header(`\`\\${aliases[0]} sell [item] [page]\` for more`)}`);
 				}
 			}
-			else if ((cmd.args[0] === "shop") || (cmd.args[0] === "sh")) {
+			else if (subcmd_handler(cmd.args[0], ["shop", "sh"])) {
 				// Find shop named search_name
 				const search_name: string = cmd.args[1];
 
@@ -284,7 +303,7 @@ sc.on("command", async (cmd) => {
 							printResults += `\n(\`${ i + 1 }\`) ${ fmt_name(results[i]) }`
 						}
 
-						await sc.tell(cmd.user.name, `Multiple shops were found. Run \`\\fs sh ${search_name} [number]\` to see specific information. ${printResults}`);
+						await sc.tell(cmd.user.name, `Multiple shops were found. Run \`\\${aliases[0]} sh ${search_name} [number]\` to see specific information. ${printResults}`);
 					}
 					else {
 						let display_shop_idx: number = 1;
@@ -324,6 +343,9 @@ sc.on("command", async (cmd) => {
 						await sc.tell(cmd.user.name, printResults);
 					}
 				}
+			}
+			else {
+				await sc.tell(cmd.user.name, `Invalid subcommand. Run \`\\${aliases[0]} help\` for valid subcommands.`)
 			}
 		}
 		catch(err) {
