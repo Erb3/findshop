@@ -6,9 +6,8 @@
   "repository": "https://github.com/slimit75/fs-chatbox.git",
   "author": "slimit75",
   "license": "GPL-3.0-or-later",
-  "type": "commonjs",
+  "type": "module",
   "dependencies": {
-    "dotenv": "^16.3.1",
     "mongodb": "^5.8.0",
     "switchchat": "^3.2.1"
   },

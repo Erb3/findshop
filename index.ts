@@ -16,7 +16,6 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import "dotenv/config";
 import { Client } from "switchchat";
 import { MongoClient } from "mongodb";
 import { shop_loc_t, shop_t, shop_item_t, search_results_t } from "./types";
@@ -26,7 +25,7 @@ const db_client: MongoClient = new MongoClient(<string>process.env.DB_URI);
 const database = db_client.db(`SC3`);
 const db_shops = database.collection<shop_t>(`RawShops`);
 
-const aliases: string[] = ["fs", "find", "findshop"];
+const aliases: string[] = ["fsd"]; // Temporary development/testing alias
 const resultsPerPage: number = 7;
 const help_link: string = "https://github.com/slimit75/FindShop/wiki/Why-are-shops-and-items-missing%3F";
 
@@ -62,11 +61,21 @@ function fmt_loc(location: shop_loc_t): string {
  * @param item Input item from shop
  */
 function fmt_price(item: shop_item_t): string {
-	if (item.dynamicPrice) {
-		return `\`${item.prices[0].value}*\` ${item.prices[0].currency}`
+	let prefix: string = "";
+	let suffix: string = "";
+
+	if (item.prices[0].currency === "KST") {
+		prefix = "\uE000";
 	}
 	else {
-		return `\`${item.prices[0].value}\` ${item.prices[0].currency}`
+		suffix = ` ${item.prices[0].currency}`;
+	}
+
+	if (item.dynamicPrice) {
+		return prefix + `\`${item.prices[0].value}*\`` + suffix;
+	}
+	else {
+		return prefix + `\`${item.prices[0].value}\`` + suffix;
 	}
 }
 
@@ -325,7 +334,7 @@ sc.on("command", async (cmd) => {
 });
 
 sc.on("ready", () => {
-	console.log("Started FindShop Chatbox Server!");
+	console.info(`FindShop - ${Date()}\nChatbox registered to ${sc.owner}`);
 });
 
 process.on("exit", async () => {
