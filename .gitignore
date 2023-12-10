@@ -1,11 +1,39 @@
-# Package Manager
-node_modules
+lib-cov
+*.seed
+*.log
+*.csv
+*.dat
+*.out
+*.pid
+*.gz
+*.swp
 
-# IDEs
-.idea
+pids
+logs
+results
+tmp
 
-# Other
+# Coverage reports
+coverage
+
+# API keys and secrets
 .env
-*.js
-/index.js.map
-/types.js.map
+
+# Dependency directory
+node_modules
+bower_components
+
+# Editors
+.idea
+*.iml
+
+# OS metadata
+.DS_Store
+Thumbs.db
+
+# Ignore built ts files
+dist/**/*
+
+# ignore bad package managers
+yarn.lock
+package-lock.json
