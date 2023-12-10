@@ -30,7 +30,7 @@ Shops might not appear if:
 ### What softwares support ShopSync?
 
 > [!NOTE]
-> If there are other, feel free to submit a PR.
+> If there are others, feel free to submit a PR.
 
 | Software                                         | Version  | ShopSync Standard (in latest version) | Note                                                |
 | ------------------------------------------------ | -------- | ------------------------------------- | --------------------------------------------------- |

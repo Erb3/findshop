@@ -9,7 +9,7 @@ const db_shops = database.collection<shop_t>(`RawShops`);
 
 const aliases: string[] = ['fs', 'find', 'findshop'];
 const resultsPerPage: number = 7;
-const help_link: string = 'https://github.com/slimit75/FindShop/wiki/Why-are-shops-and-items-missing%3F';
+const help_link: string = 'https://github.com/Pixium/findshop#why-are-shops-or-items-missing';
 
 sc.defaultName = '&6&lFindShop';
 sc.defaultFormattingMode = 'markdown';
