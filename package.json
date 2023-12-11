@@ -21,11 +21,13 @@
     "stop": "pm2 stop 0"
   },
   "dependencies": {
+    "drizzle-orm": "^0.29.1",
     "mongodb": "^5.8.0",
     "switchchat": "^3.2.1"
   },
   "devDependencies": {
-    "bun-types": "latest"
+    "bun-types": "latest",
+    "drizzle-kit": "^0.20.6"
   },
   "peerDependencies": {
     "typescript": "^5.1.6"
