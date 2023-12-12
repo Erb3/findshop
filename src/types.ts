@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 // FindShop-specific data.
 export interface findshop_data_t {
   computerID: number;
@@ -57,3 +59,12 @@ export interface search_results_t {
   shop: shop_t;
   item: shop_item_t;
 }
+
+export const configSchema = z.object({
+  CHATBOX_TOKEN: z.string().uuid(),
+  CHATBOX_NAME: z.string().default("&6&lFindShop"),
+  ALIASES: z.array(z.string()).default(["fs", "findshop"]),
+  RESULTS_PER_AGE: z.number().default(7),
+  GITHUB_LINK: z.string().default("https://github.com/Pixium/findshop"),
+  CHAT_WIDTH: z.number().default(49),
+});

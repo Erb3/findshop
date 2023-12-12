@@ -15,12 +15,19 @@ export const shops = sqliteTable("shops", {
   lastSeen: int("last_seen", { mode: "timestamp" }),
 });
 
-export const shopsRelations = relations(shops, ({ one, many }) => ({
-  mainLocation: one(locations),
-  otherLocations: many(locations),
+export const shopsRelations = relations(shops, ({ one }) => ({
+  mainLocation: one(locations, {
+    fields: [shops.id],
+    references: [locations.shopId],
+  }),
+  // otherLocations: many(locations),
 }));
 
 export const locations = sqliteTable("locations", {
+  locationId: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  shopId: text("shop_id").references(() => shops.id),
   x: int("x").notNull(),
   y: int("y").notNull(),
   z: int("z").notNull(),

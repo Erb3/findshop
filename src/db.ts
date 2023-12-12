@@ -19,4 +19,12 @@ export class DatabaseManager {
 
     return !!shop;
   }
+
+  async getAllShops() {
+    return await this.db.query.shops.findMany({
+      with: {
+        mainLocation: true,
+      },
+    });
+  }
 }
