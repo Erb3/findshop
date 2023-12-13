@@ -19,9 +19,7 @@
   },
   "dependencies": {
     "drizzle-orm": "^0.29.1",
-    "mongodb": "^5.8.0",
     "switchchat": "^3.2.1",
-    "wscat": "^5.2.0",
     "zod": "^3.22.4"
   },
   "devDependencies": {

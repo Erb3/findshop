@@ -28,7 +28,7 @@ chatbox.on("command", async (cmd) => {
     case "list":
     case "l":
     case "ls":
-      chatboxHandler.sendList(cmd.user);
+      chatboxHandler.sendShopsList(cmd.user);
       break;
 
     case "sell":

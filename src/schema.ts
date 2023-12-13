@@ -15,11 +15,13 @@ export const shops = sqliteTable("shops", {
   lastSeen: int("last_seen", { mode: "timestamp" }),
 });
 
-export const shopsRelations = relations(shops, ({ one }) => ({
+export const shopsRelations = relations(shops, ({ one, many }) => ({
   mainLocation: one(locations, {
     fields: [shops.id],
     references: [locations.shopId],
   }),
+  items: many(items),
+
   // otherLocations: many(locations),
 }));
 
@@ -33,4 +35,13 @@ export const locations = sqliteTable("locations", {
   z: int("z").notNull(),
   description: text("description"),
   dimension: text("dimension", { enum: ["overworld", "nether", "end"] }),
+});
+
+export const items = sqliteTable("items", {
+  itemId: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  shopId: text("shop_id").references(() => shops.id),
+  minecraftItemId: text("item_id").notNull(),
+  price: int("price").notNull(),
 });
