@@ -45,7 +45,7 @@ chatbox.on("command", async (cmd) => {
     default:
     case "buy":
     case "b":
-      chatboxHandler.sendDisabledFeature(cmd.user);
+      chatboxHandler.searchItems(cmd.args.join(" "), cmd.user);
       break;
   }
 });

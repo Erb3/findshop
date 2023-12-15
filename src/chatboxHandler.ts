@@ -2,6 +2,7 @@ import { Client, User } from "switchchat";
 import { DatabaseManager } from "./db";
 import { configSchema } from "./types";
 import { z } from "zod";
+import { formatLocation } from "./utils";
 
 const short: string[] = ["l", "i", "t", "[", "]", " "];
 interface ResponseGeneratorOptions {
@@ -108,12 +109,26 @@ export class ChatboxHandler {
   async searchItems(query: string, user: User) {
     const items = await this.db.searchItems(query);
     let output: string[] = [];
-    output.push("=".repeat(this.config.CHAT_WIDTH));
 
-    // items.forEach((v) => {
-    //   output.push("yes");
-    // });
+    items.forEach((v) => {
+      if (!v.shop.mainLocation) {
+        throw new Error("Missing location!");
+      }
 
-    output.push("=".repeat(this.config.CHAT_WIDTH));
+      output.push(
+        `\`${v.itemId}\` at **${v.shop.name}** (\`${formatLocation(
+          v.shop.mainLocation
+        )}\`)`
+      );
+    });
+
+    this.chatbox.tell(
+      user.uuid,
+      this.generateResponse({
+        title: "Page 1 of 2",
+        content: output,
+        footer: "`\\fs ls 2` for the next page",
+      })
+    );
   }
 }

@@ -1,40 +1,48 @@
-import { BunSQLiteDatabase, drizzle } from "drizzle-orm/bun-sqlite";
-import Database from "bun:sqlite";
-import * as schema from "./schema";
-import { eq } from "drizzle-orm";
-import { shop_t } from "./types";
+import { PrismaClient } from "@prisma/client";
 
 export class DatabaseManager {
-  db: BunSQLiteDatabase<typeof schema>;
+  db: PrismaClient;
 
   constructor() {
-    const sqlite = new Database("findshop.db", { create: true });
-    const db = drizzle(sqlite, { schema });
-    this.db = db;
-  }
-
-  async hasShopByComputerID(computerID: number): Promise<boolean> {
-    const shop = await this.db.query.shops.findFirst({
-      where: eq(schema.shops.computerID, computerID),
+    this.db = new PrismaClient({
+      log: ["query", "warn", "error", "info"],
     });
-
-    return !!shop;
   }
 
   async getAllShops() {
-    return await this.db.query.shops.findMany({
-      with: {
+    return this.db.shop.findMany({
+      include: {
         mainLocation: true,
       },
     });
   }
 
-  async searchItems(query: string) {}
-
-  async updateShop(data: shop_t) {
-    const shop = await this.db.query;
-
-    if (!shop) {
-    }
+  async searchItems(query: string) {
+    return this.db.item.findMany({
+      where: {
+        itemId: {
+          contains: query,
+          mode: "insensitive",
+        },
+        OR: [
+          {
+            displayName: {
+              contains: query,
+              mode: "insensitive",
+            },
+          },
+        ],
+      },
+      orderBy: {
+        price: "desc",
+      },
+      include: {
+        shop: {
+          include: {
+            mainLocation: true,
+          },
+        },
+      },
+    });
   }
 }
