@@ -1,8 +1,8 @@
 import { Client, User } from "switchchat";
-import { DatabaseManager } from "./db";
-import { configSchema } from "./types";
 import { z } from "zod";
 import { formatLocation } from "./utils";
+import { configSchema } from "./plugins/config";
+import { DatabaseManager } from "./plugins/db";
 
 const short: string[] = ["l", "i", "t", "[", "]", " "];
 interface ResponseGeneratorOptions {

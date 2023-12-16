@@ -1,16 +1,15 @@
+import fp from "fastify-plugin";
 import { PrismaClient } from "@prisma/client";
 
 export class DatabaseManager {
-  db: PrismaClient;
+  prisma: PrismaClient;
 
-  constructor() {
-    this.db = new PrismaClient({
-      log: ["query", "warn", "error", "info"],
-    });
+  constructor(prisma: PrismaClient) {
+    this.prisma = prisma;
   }
 
   async getAllShops() {
-    return this.db.shop.findMany({
+    return this.prisma.shop.findMany({
       include: {
         mainLocation: true,
       },
@@ -18,7 +17,7 @@ export class DatabaseManager {
   }
 
   async searchItems(query: string) {
-    return this.db.item.findMany({
+    return this.prisma.item.findMany({
       where: {
         itemId: {
           contains: query,
@@ -46,3 +45,21 @@ export class DatabaseManager {
     });
   }
 }
+
+declare module "fastify" {
+  interface FastifyInstance {
+    db: DatabaseManager;
+  }
+}
+
+export default fp(async (fastify, options) => {
+  const prisma = new PrismaClient({
+    log: ["error", "info", "query", "warn"],
+  });
+  await prisma.$connect();
+
+  fastify.decorate("db", new DatabaseManager(prisma));
+  fastify.addHook("onClose", async (server) => {
+    await server.db.prisma.$disconnect();
+  });
+});

@@ -1,57 +1,18 @@
-import { Client } from "switchchat";
-import { configSchema } from "./types";
-import { DatabaseManager } from "./db";
-import { ChatboxHandler } from "./chatboxHandler";
+import Fastify from "fastify";
+import loggerPlugin from "./plugins/logger";
+import configPlugin from "./plugins/config";
+import dbPlugin from "./plugins/db";
+import chatboxPlugin from "./plugins/chatbox";
 
-const config = await configSchema.parseAsync(Bun.env);
-const chatbox = new Client(config.CHATBOX_TOKEN);
-const db = new DatabaseManager();
-const chatboxHandler = new ChatboxHandler(chatbox, db, config);
+const fastify = Fastify({});
+fastify.register(loggerPlugin);
+fastify.register(configPlugin);
+fastify.register(dbPlugin);
+fastify.register(chatboxPlugin);
 
-chatbox.defaultName = config.CHATBOX_NAME;
-chatbox.defaultFormattingMode = "markdown";
-
-chatbox.on("command", async (cmd) => {
-  if (!config.ALIASES.includes(cmd.command)) return;
-  console.debug(`${cmd.user.name}: ${cmd.args.join(" ")}`);
-
-  switch (cmd.args[0]) {
-    case null:
-    case "help":
-      chatboxHandler.sendHelp(cmd.user);
-      break;
-
-    case "stats":
-      chatboxHandler.sendDisabledFeature(cmd.user);
-      break;
-
-    case "list":
-    case "l":
-    case "ls":
-      chatboxHandler.sendShopsList(cmd.user);
-      break;
-
-    case "sell":
-    case "sl":
-    case "s":
-      chatboxHandler.sendDisabledFeature(cmd.user);
-      break;
-
-    case "shop":
-    case "sh":
-      chatboxHandler.sendDisabledFeature(cmd.user);
-      break;
-
-    default:
-    case "buy":
-    case "b":
-      chatboxHandler.searchItems(cmd.args.join(" "), cmd.user);
-      break;
+fastify.listen(
+  { port: 8080, host: "0.0.0.0", ipv6Only: false },
+  (err, addr) => {
+    console.log(`FindShop backend running on ${addr}`);
   }
-});
-
-chatbox.on("ready", () => {
-  console.log("Successfully connected to chatbox!");
-});
-
-chatbox.connect();
+);
