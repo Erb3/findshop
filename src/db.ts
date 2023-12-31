@@ -1,5 +1,5 @@
-import fp from "fastify-plugin";
 import { PrismaClient } from "@prisma/client";
+import { FindShopLogger } from "./logger";
 
 export class DatabaseManager {
   prisma: PrismaClient;
@@ -44,22 +44,37 @@ export class DatabaseManager {
       },
     });
   }
+
+  // async createCache() {
+  //   const shops = await this.prisma.shop.findMany({
+  //     select: {
+  //       name: true,
+  //       items: true,
+  //     },
+  //   });
+
+  //   const data: {
+  //     name: string;
+  //     items: number;
+  //   }[] = [];
+  //   shops.forEach((v) => {
+  //     data.push({
+  //       name: v.name,
+  //       items: v.items.length,
+  //     });
+  //   });
+
+  //   return data;
+  // }
 }
 
-declare module "fastify" {
-  interface FastifyInstance {
-    db: DatabaseManager;
-  }
-}
-
-export default fp(async (fastify, options) => {
+export async function connectToDatabase() {
+  FindShopLogger.logger.debug("Connecting to database...");
   const prisma = new PrismaClient({
     log: ["error", "info", "query", "warn"],
   });
-  await prisma.$connect();
 
-  fastify.decorate("db", new DatabaseManager(prisma));
-  fastify.addHook("onClose", async (server) => {
-    await server.db.prisma.$disconnect();
-  });
-});
+  await prisma.$connect();
+  FindShopLogger.logger.debug("Connected to database!");
+  return new DatabaseManager(prisma);
+}

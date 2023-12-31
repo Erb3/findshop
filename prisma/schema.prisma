@@ -8,53 +8,48 @@ datasource db {
 }
 
 model Shop {
-  id               String   @id @default(auto()) @map("_id") @db.ObjectId
-  name             String
-  description      String?
-  owner            String
-  computerID       Int
-  multiShop        Boolean
-  softwareName     String?
-  softwareVersions String?
-  lastSeen         DateTime @default(now())
-  mainLocation     Location @relation(fields: [mainLocationId], references: [id])
-  mainLocationId   String   @unique @db.ObjectId
-  items            Item[]
+  id              String    @id @default(auto()) @map("_id") @db.ObjectId
+  name            String
+  description     String?
+  owner           String?
+  computerID      Int
+  multiShop       Boolean
+  softwareName    String?
+  softwareVersion String?
+  lastSeen        DateTime  @default(now())
+  mainLocation    Location? @relation(fields: [mainLocationID], references: [id])
+  mainLocationID  String?   @unique @db.ObjectId
+  items           Item[]
 }
 
 model Location {
-  id          String    @id @default(auto()) @map("_id") @db.ObjectId
-  x           Int
-  y           Int
-  z           Int
+  id          String     @id @default(auto()) @map("_id") @db.ObjectId
+  x           Int?
+  y           Int?
+  z           Int?
   description String?
-  dimension   Dimension
+  dimension   Dimension?
   shop        Shop?
 }
 
 model Item {
-  id                  String   @id @default(auto()) @map("_id") @db.ObjectId
-  itemId              String
-  price               Float
-  currency            Currency @default(KST)
+  id                  String  @id @default(auto()) @map("_id") @db.ObjectId
+  itemID              String
+  priceKST            Float?
+  priceTST            Float?
   displayName         String
-  dynamicPrice        Boolean  @default(false)
-  madeOnDemand        Boolean  @default(false)
+  dynamicPrice        Boolean
+  madeOnDemand        Boolean
   stock               Int?
-  requiresInteraction Boolean  @default(false)
-  isBuyingItem        Boolean  @default(false)
-  noLimit             Boolean  @default(false)
-  shop                Shop     @relation(fields: [shopId], references: [id])
-  shopId              String   @db.ObjectId
+  requiresInteraction Boolean
+  isBuyingItem        Boolean
+  noLimit             Boolean
+  shop                Shop    @relation(fields: [shopID], references: [id])
+  shopID              String  @db.ObjectId
 }
 
 enum Dimension {
   OVERWORLD
   NETHER
   END
-}
-
-enum Currency {
-  KST
-  TST
 }

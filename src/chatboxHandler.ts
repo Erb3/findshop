@@ -1,8 +1,66 @@
 import { Client, User } from "switchchat";
 import { z } from "zod";
 import { formatLocation } from "./utils";
-import { configSchema } from "./plugins/config";
-import { DatabaseManager } from "./plugins/db";
+import { configSchema } from "./config";
+import { DatabaseManager } from "./db";
+import { FindShopLogger } from "./logger";
+
+export async function initChatbox(
+  config: z.infer<typeof configSchema>,
+  db: DatabaseManager
+) {
+  const chatbox = new Client(config.CHATBOX_TOKEN);
+  const chatboxHandler = new ChatboxHandler(chatbox, db, config);
+
+  chatbox.defaultName = config.CHATBOX_NAME;
+  chatbox.defaultFormattingMode = "markdown";
+
+  chatbox.on("command", async (cmd) => {
+    if (!config.ALIASES.includes(cmd.command)) return;
+    console.debug(`${cmd.user.name}: ${cmd.args.join(" ")}`);
+
+    switch (cmd.args[0]) {
+      case null:
+      case "help":
+        chatboxHandler.sendHelp(cmd.user);
+        break;
+
+      case "stats":
+        chatboxHandler.sendDisabledFeature(cmd.user);
+        break;
+
+      case "list":
+      case "l":
+      case "ls":
+        chatboxHandler.sendShopsList(cmd.user);
+        break;
+
+      case "sell":
+      case "sl":
+      case "s":
+        chatboxHandler.sendDisabledFeature(cmd.user);
+        break;
+
+      case "shop":
+      case "sh":
+        chatboxHandler.sendDisabledFeature(cmd.user);
+        break;
+
+      default:
+      case "buy":
+      case "b":
+        chatboxHandler.searchItems(cmd.args.join(" "), cmd.user);
+        break;
+    }
+  });
+
+  chatbox.on("ready", () => {
+    FindShopLogger.logger.debug("Connected to chatbox!");
+  });
+
+  FindShopLogger.logger.debug("Connecting to chatbox...");
+  chatbox.connect();
+}
 
 const short: string[] = ["l", "i", "t", "[", "]", " "];
 interface ResponseGeneratorOptions {

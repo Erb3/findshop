@@ -1,5 +1,10 @@
 import { Location } from "@prisma/client";
+import { z as zod } from "zod";
 
-export function formatLocation(loc: Location) {
-  return `${loc.x} ${loc.y} ${loc.z}`;
+const urlValidator = zod.union([zod.string().ip(), zod.string().url()]);
+
+export function formatLocation({ x, y, z, description, dimension }: Location) {
+  if (urlValidator.parse(description)) {
+    return description;
+  }
 }
