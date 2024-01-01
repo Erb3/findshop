@@ -1,9 +1,40 @@
-local modem = peripheral.find("modem")
+settings.define("findshop.wstoken", {
+  type = "string",
+  default = ""
+})
 
-modem.open(9773)
+settings.define("findshop.wsserver", {
+  type = "string",
+  default = ""
+})
+
+settings.define("findshop.port", {
+  type = "number",
+  default = 9773
+})
+
+local WSSERVER = settings.get("findshop.wsserver") or ""
+local TOKEN = settings.get("findshop.wstoken") or ""
+local PORT = settings.get("findshop.port") or 9773
+
+if #WSSERVER == 0 then
+  error("WS server URL must be specified at findshop.wsserver")
+end
+
+if #TOKEN == 0 then
+  error("Token must be specified at findshop.wstoken")
+end
+
+local modem = peripheral.find("modem") or error("Modem not found")
+
+if not modem.isWireless() then
+  printError("Modem is not wireless, this could be an issue, continuing")
+end
+
+modem.open(PORT)
 
 local function chktype(var, ...)
-  print("chktype", var, ...)
+  --print("chktype", var, ...)
   for _, v in ipairs({ ... }) do
     if type(var) == v then
       return true
@@ -13,7 +44,7 @@ local function chktype(var, ...)
 end
 
 local function tassert(var, ...)
-  print("tassert", var, ...)
+  --print("tassert", var, ...)
   if chktype(var, ...) then
     return var
   end
@@ -90,20 +121,6 @@ local function check(msg)
   end
 end
 
-local function receive()
-  local event, side, channel, replyChannel, msg, distance = os.pullEvent("modem_message")
-
-  if channel == 9773 then
-    if type(msg) == "table" and type(msg.info) == "table" then
-      msg.info.computerID = msg.info.computerID or replyChannel
-    end
-
-    local ok, err = pcall(check, msg)
-    if not ok then print(err) end
-    return ok, msg
-  end
-end
-
 local function wsify(msg)
   local ret = {}
 
@@ -156,16 +173,71 @@ local function wsify(msg)
   return ret
 end
 
-local ws = http.websocket("", {
-  ["Authorization"] = ""
+local oldPullEvent = os.pullEvent
+os.pullEvent = function(filter)
+  while true do
+    local ev = { os.pullEventRaw() }
+    if ev[1] == "terminate" then
+      os.pullEvent = oldPullEvent
+      print("Closing websocket connection")
+      pcall(function()
+        ws.close()
+      end)
+      print("Closing modem port " .. PORT)
+      pcall(function()
+        modem.close(PORT)
+      end)
+      error("Terminated")
+    end
+    if ev[1] == filter then
+      return table.unpack(ev)
+    end
+  end
+end
+
+
+local function receive()
+  while true do
+    local event, side, channel, replyChannel, msg, distance = os.pullEvent("modem_message")
+
+    if channel == PORT then
+      if type(msg) == "table" and type(msg.info) == "table" then
+        msg.info.computerID = msg.info.computerID or replyChannel
+      end
+
+      local ok, err = pcall(check, msg)
+      if not ok then print(err) end
+      return ok, msg
+    end
+  end
+end
+
+local ws, err = http.websocket(WSSERVER, {
+  ["Authorization"] = TOKEN
 })
+
+if not ws then
+  print("Failed to connect to WS: " .. err)
+end
 
 while true do
   local ok, msg = receive()
 
   if ok then
-    -- TODO
+    if ws then
+      ws.send(textutils.serializeJSON(wsify(msg)))
+    else
+      io.write("WS connection closed, attempting basic reconnect... ")
+      ws, err = http.websocket(WSSERVER, {
+        ["Authorization"] = TOKEN
+      })
+      if ws then
+        print("Success")
+      else
+        print("Fail: " .. err)
+      end
+    end
   else
-    print("someones EVIL shop is sending bad data")
+    print("Received bad data from shop")
   end
 end

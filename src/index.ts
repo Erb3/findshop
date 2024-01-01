@@ -50,19 +50,25 @@ const websocketMessageSchema = z
 
 Bun.serve({
   fetch(req, server) {
+    console.log("Request:", req); // Log the request object
+    console.log("Server:", server); // Log the server object
+
     if (req.headers.get("Authorization") !== config.WEBSOCKET_TOKEN) {
+      console.log("Unauthorized request"); // Log unauthorized request
       return new Response("Unauthorized", { status: 401 });
     }
 
     if (server.upgrade(req)) {
+      console.log("Upgrade successful"); // Log successful upgrade
       return;
     }
 
+    console.log("Upgrade failed"); // Log upgrade failure
     return new Response("Upgrade failed :(", { status: 500 });
   },
   websocket: {
     message: (ws, msg) => {
-      console.log(msg);
+      FindShopLogger.logger.debug(msg);
       const tryParse = websocketMessageSchema.safeParse(msg);
       if (!tryParse.success) {
         FindShopLogger.logger.error(

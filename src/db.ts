@@ -19,7 +19,7 @@ export class DatabaseManager {
   async searchItems(query: string) {
     return this.prisma.item.findMany({
       where: {
-        itemId: {
+        itemID: {
           contains: query,
           mode: "insensitive",
         },
@@ -33,7 +33,7 @@ export class DatabaseManager {
         ],
       },
       orderBy: {
-        price: "desc",
+        priceKST: "desc",
       },
       include: {
         shop: {
@@ -44,28 +44,6 @@ export class DatabaseManager {
       },
     });
   }
-
-  // async createCache() {
-  //   const shops = await this.prisma.shop.findMany({
-  //     select: {
-  //       name: true,
-  //       items: true,
-  //     },
-  //   });
-
-  //   const data: {
-  //     name: string;
-  //     items: number;
-  //   }[] = [];
-  //   shops.forEach((v) => {
-  //     data.push({
-  //       name: v.name,
-  //       items: v.items.length,
-  //     });
-  //   });
-
-  //   return data;
-  // }
 }
 
 export async function connectToDatabase() {

@@ -21,6 +21,7 @@ export async function initChatbox(
 
     switch (cmd.args[0]) {
       case null:
+      case undefined:
       case "help":
         chatboxHandler.sendHelp(cmd.user);
         break;
@@ -130,7 +131,7 @@ export class ChatboxHandler {
     \`\\fs buy [item]\` - Finds shops selling *[item]*
     \`\\fs sell [item]\` - Finds shops buying *[item]*
     \`\\fs shop [name]\` - Finds shops named *[name]* and their info
-    For more information, check [the GitHub](${this.config.GITHUB_LINK})`
+    For more information, check [the GitHub repository](${this.config.GITHUB_LINK})`
     );
   }
 
@@ -146,12 +147,7 @@ export class ChatboxHandler {
     let output: string[] = [];
 
     shops.forEach((v) =>
-      output.push(
-        `  **${v.name}** at ${
-          v.mainLocation?.description ||
-          `\`${v.mainLocation.x} ${v.mainLocation.y} ${v.mainLocation.z}\``
-        }`
-      )
+      output.push(`  **${v.name}** at ${formatLocation(v)}`)
     );
 
     this.chatbox.tell(
@@ -174,7 +170,7 @@ export class ChatboxHandler {
       }
 
       output.push(
-        `\`${v.itemId}\` at **${v.shop.name}** (\`${formatLocation(
+        `\`${v.itemID}\` at **${v.shop.name}** (\`${formatLocation(
           v.shop.mainLocation
         )}\`)`
       );
