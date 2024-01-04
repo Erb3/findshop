@@ -9,7 +9,7 @@ const config = await parseConfig();
 const db = await connectToDatabase();
 await initChatbox(config, db);
 
-const websocketMessageSchema = z
+export const websocketMessageSchema = z
   .object({
     type: z.literal("shop"),
     shopName: z.string(),
@@ -25,7 +25,7 @@ const websocketMessageSchema = z
         y: z.number().optional(),
         z: z.number().optional(),
         description: z.string().optional(),
-        dimension: z.enum(["OVERWORLD", "NETHER", "END"]).optional(),
+        dimension: z.enum(["overworld", "nether", "end"]).optional(),
       })
       .optional(),
     items: z.array(
@@ -44,32 +44,29 @@ const websocketMessageSchema = z
     ),
   })
   .refine(
-    (data) => !data.items.every((v) => v.kstPrice || v.tstPrice),
+    (data) => !data.items.every((v) => {
+      console.log("REFINEMENT", v.kstPrice, v.tstPrice, !!v.kstPrice, !!v.tstPrice, v.kstPrice === undefined && v.tstPrice === undefined);
+      return v.kstPrice === undefined && v.tstPrice === undefined
+    }),
     "All items must have either a KST or TST price"
   );
 
 Bun.serve({
   fetch(req, server) {
-    console.log("Request:", req); // Log the request object
-    console.log("Server:", server); // Log the server object
-
     if (req.headers.get("Authorization") !== config.WEBSOCKET_TOKEN) {
-      console.log("Unauthorized request"); // Log unauthorized request
       return new Response("Unauthorized", { status: 401 });
     }
 
     if (server.upgrade(req)) {
-      console.log("Upgrade successful"); // Log successful upgrade
+      FindShopLogger.logger.debug("Client connected!");
       return;
     }
 
-    console.log("Upgrade failed"); // Log upgrade failure
     return new Response("Upgrade failed :(", { status: 500 });
   },
   websocket: {
-    message: (ws, msg) => {
-      FindShopLogger.logger.debug(msg);
-      const tryParse = websocketMessageSchema.safeParse(msg);
+    message: async (ws, msg) => {
+      const tryParse = websocketMessageSchema.safeParse(JSON.parse(msg.toString('utf8')));
       if (!tryParse.success) {
         FindShopLogger.logger.error(
           `Failed to parse websocket message: ${tryParse.error}`
@@ -84,6 +81,64 @@ Bun.serve({
       }
 
       FindShopLogger.logger.debug("Parsed WebSocket message");
+
+      const data = tryParse.data;
+      const shop = await db.prisma.shop.findFirst({
+        where: {
+          computerID: data.computerID,
+          multiShop: data.multiShop,
+        }
+      })
+
+      if (!shop) {
+        await db.createShop(data);
+        return;
+      }
+
+      await db.prisma.shop.update({
+        where: {
+          id: shop.id,
+        },
+        data: {
+          description: data.shopDescription,
+          multiShop: data.multiShop,
+          name: data.shopName,
+          owner: data.owner,
+          softwareName: data.softwareName,
+          softwareVersion: data.softwareVersion,
+          mainLocation: {
+            upsert: {
+              create: {
+                description: data.mainLocation?.description,
+                dimension: data.mainLocation?.dimension,
+                x: data.mainLocation?.x,
+                y: data.mainLocation?.y,
+                z: data.mainLocation?.z,
+              },
+              update: {
+                description: data.mainLocation?.description,
+                dimension: data.mainLocation?.dimension,
+                x: data.mainLocation?.x,
+                y: data.mainLocation?.y,
+                z: data.mainLocation?.z,
+              }
+            }
+          },
+          items: {
+            deleteMany: {
+              id: {
+                notIn: data.items.map((item) => item.itemID),
+              }
+            },
+            connectOrCreate: {
+              create: data.items,
+              where: data.items
+            }
+          }
+        }
+      });
+
+
     },
   },
   port: 8080,

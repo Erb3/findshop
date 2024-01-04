@@ -13,6 +13,8 @@ settings.define("findshop.port", {
   default = 9773
 })
 
+settings.save()
+
 local WSSERVER = settings.get("findshop.wsserver") or ""
 local TOKEN = settings.get("findshop.wstoken") or ""
 local PORT = settings.get("findshop.port") or 9773
@@ -79,7 +81,7 @@ local function check(msg)
       end
     end
     tassert(msg.info.location.description, "string", "nil")
-    tassert(msg.info.location.dimension, "string", "nil")
+    msg.info.location.dimension = tassert(msg.info.location.dimension, "string", "nil"):lower()
   end
   tassert(msg.info.otherLocations, "table", "nil")
   if msg.info.otherLocations then
@@ -173,29 +175,6 @@ local function wsify(msg)
   return ret
 end
 
-local oldPullEvent = os.pullEvent
-os.pullEvent = function(filter)
-  while true do
-    local ev = { os.pullEventRaw() }
-    if ev[1] == "terminate" then
-      os.pullEvent = oldPullEvent
-      print("Closing websocket connection")
-      pcall(function()
-        ws.close()
-      end)
-      print("Closing modem port " .. PORT)
-      pcall(function()
-        modem.close(PORT)
-      end)
-      error("Terminated")
-    end
-    if ev[1] == filter then
-      return table.unpack(ev)
-    end
-  end
-end
-
-
 local function receive()
   while true do
     local event, side, channel, replyChannel, msg, distance = os.pullEvent("modem_message")
@@ -212,32 +191,36 @@ local function receive()
   end
 end
 
-local ws, err = http.websocket(WSSERVER, {
-  ["Authorization"] = TOKEN
-})
-
-if not ws then
-  print("Failed to connect to WS: " .. err)
-end
-
 while true do
-  local ok, msg = receive()
+  local s,e = pcall(function()
+    local ws, err = http.websocket({
+      url = WSSERVER,
+      headers = { ["Authorization"] = TOKEN },
+      timeout = 5
+    })
 
-  if ok then
-    if ws then
-      ws.send(textutils.serializeJSON(wsify(msg)))
+    if not ws then
+      error("Failed to connect to WS: " .. err)
     else
-      io.write("WS connection closed, attempting basic reconnect... ")
-      ws, err = http.websocket(WSSERVER, {
-        ["Authorization"] = TOKEN
-      })
-      if ws then
-        print("Success")
+      print("Connected to WS")
+    end
+
+    while true do
+      local ok, msg = receive()
+
+      if ok then
+        print("Sending msg")
+        if ws then
+          ws.send(textutils.serializeJSON(wsify(msg)))
+        else
+          error("WS closed")
+        end
       else
-        print("Fail: " .. err)
+        print("Received bad data from shop")
       end
     end
-  else
-    print("Received bad data from shop")
-  end
+  end)
+
+  if not s then printError(e) end
+  sleep(2)
 end

@@ -1,5 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import { FindShopLogger } from "./logger";
+import { websocketMessageSchema } from "./index";
+import { z } from "zod";
 
 export class DatabaseManager {
   prisma: PrismaClient;
@@ -43,6 +45,29 @@ export class DatabaseManager {
         },
       },
     });
+  }
+
+  async createShop(data: z.infer<typeof websocketMessageSchema>) {
+    await this.prisma.shop.create({
+      data: {
+        computerID: data.computerID,
+        description: data.shopDescription,
+        multiShop: data.multiShop,
+        name: data.shopName,
+        owner: data.owner,
+        softwareName: data.softwareName,
+        softwareVersion: data.softwareVersion,
+        mainLocation: {
+          create: {
+            description: data.mainLocation?.description,
+            dimension: data.mainLocation?.dimension,
+            x: data.mainLocation?.x,
+            y: data.mainLocation?.y,
+            z: data.mainLocation?.z,
+          }
+        }
+      }
+    })
   }
 }
 

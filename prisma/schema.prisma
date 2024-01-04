@@ -35,8 +35,8 @@ model Location {
 model Item {
   id                  String  @id @default(auto()) @map("_id") @db.ObjectId
   itemID              String
-  priceKST            Float?
-  priceTST            Float?
+  tstPrice            Float?
+  kstPrice            Float?
   displayName         String
   dynamicPrice        Boolean
   madeOnDemand        Boolean
@@ -49,7 +49,7 @@ model Item {
 }
 
 enum Dimension {
-  OVERWORLD
-  NETHER
-  END
+  overworld
+  nether
+  end
 }
