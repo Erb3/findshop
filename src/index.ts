@@ -125,20 +125,13 @@ Bun.serve({
             }
           },
           items: {
-            deleteMany: {
-              id: {
-                notIn: data.items.map((item) => item.itemID),
-              }
-            },
-            connectOrCreate: {
-              create: data.items,
-              where: data.items
+            deleteMany: {},
+            createMany: {
+              data: data.items
             }
           }
         }
       });
-
-
     },
   },
   port: 8080,

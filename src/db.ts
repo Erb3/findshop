@@ -35,7 +35,7 @@ export class DatabaseManager {
         ],
       },
       orderBy: {
-        priceKST: "desc",
+        kstPrice: "desc",
       },
       include: {
         shop: {

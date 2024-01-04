@@ -13,7 +13,7 @@ test("Format location", () => {
   expect(
     formatLocation({
       description: "https://example.com",
-      dimension: "NETHER",
+      dimension: "nether",
       x: 1,
       y: 2,
       z: 3,
@@ -26,7 +26,7 @@ test("Format location", () => {
     "the back of CatMall"
   );
 
-  expect(formatLocation({ dimension: "NETHER" })).toBe("the nether");
+  expect(formatLocation({ dimension: "nether" })).toBe("the nether");
 
   expect(
     formatLocation({
@@ -34,7 +34,7 @@ test("Format location", () => {
       y: 2,
       z: 3,
       description: "joe mama",
-      dimension: "END",
+      dimension: "end",
     })
   ).toBe("`1 2 3` (joe mama) in the end");
 });
