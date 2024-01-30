@@ -1,6 +1,6 @@
 import { Client, User } from "switchchat";
 import { z } from "zod";
-import { formatLocation } from "./utils";
+import { formatLocation, makeResponse } from "./utils";
 import { configSchema } from "./config";
 import { DatabaseManager } from "./db";
 import { FindShopLogger } from "./logger";
@@ -47,11 +47,37 @@ export async function initChatbox(
         chatboxHandler.sendDisabledFeature(cmd.user);
         break;
 
-      default:
       case "buy":
       case "b":
-        chatboxHandler.searchItems(cmd.args.join(" "), cmd.user);
+        let items = await chatboxHandler.searchItems(cmd.args[1]);
+        let page = parseInt(cmd.args[2]) 
+        if (isNaN(page)) page = 1;
+        chatboxHandler.chatbox.tell(
+          cmd.user.uuid,
+          makeResponse({
+            content: items,
+            page: page,
+            args: "buy " + cmd.args[1],
+          })
+        );
+        console.log(cmd.args[0])
         break;
+
+      default:
+        {
+          let items = await chatboxHandler.searchItems(cmd.args[0]);
+          let page = parseInt(cmd.args[1]) 
+          if (isNaN(page)) page = 1;
+          chatboxHandler.chatbox.tell(
+            cmd.user.uuid,
+            makeResponse({
+              content: items,
+              page: page,
+              args: cmd.args[0],
+            })
+          );
+          break;
+        }
     }
   });
 
@@ -64,11 +90,6 @@ export async function initChatbox(
 }
 
 const short: string[] = ["l", "i", "t", "[", "]", " "];
-interface ResponseGeneratorOptions {
-  title?: string;
-  footer?: string;
-  content: string[] | string;
-}
 
 export class ChatboxHandler {
   chatbox: Client;
@@ -108,30 +129,16 @@ export class ChatboxHandler {
     }
   }
 
-  generateResponse(options: ResponseGeneratorOptions) {
-    const output: string[] = ["Result:"];
-    output.push(this.generateLine(options.title));
-
-    if (options.content instanceof Array) {
-      output.push(...options.content);
-    } else {
-      output.push(options.content);
-    }
-
-    output.push(this.generateLine(options.footer));
-    return output.join("\n");
-  }
-
   async sendHelp(user: User) {
     await this.chatbox.tell(
       user.uuid,
       `FindShop helps locate ShopSync-compatible shops buying or selling an item.
-    \`\\fs list\` - List detected shops
-    \`\\fs stats\` - Statistics (currently only shop count)
-    \`\\fs buy [item]\` - Finds shops selling *[item]*
-    \`\\fs sell [item]\` - Finds shops buying *[item]*
-    \`\\fs shop [name]\` - Finds shops named *[name]* and their info
-    For more information, check [the GitHub repository](${this.config.GITHUB_LINK})`
+      \`\\fs list\` - List detected shops
+      \`\\fs stats\` - Statistics (currently only shop count)
+      \`\\fs buy [item]\` - Finds shops selling *[item]*
+      \`\\fs sell [item]\` - Finds shops buying *[item]*
+      \`\\fs shop [name]\` - Finds shops named *[name]* and their info
+      For more information, check [the GitHub repository](${this.config.GITHUB_LINK})`
     );
   }
 
@@ -143,46 +150,53 @@ export class ChatboxHandler {
   }
 
   async sendShopsList(user: User) {
-    const shops = await this.db.getAllShops();
-    let output: string[] = [];
+    return this.sendDisabledFeature(user);
 
-    shops.forEach((v) =>
-      output.push(`  **${v.name}** at ${formatLocation(v)}`)
-    );
+    /*
+    const shops = await this.db.getAllShops();
+    const lines = shops.map((shop) => `**${shop.name}** at ${formatLocation(shop)}`);
 
     this.chatbox.tell(
       user.uuid,
-      this.generateResponse({
-        title: "Page 1 of 2",
-        content: output,
-        footer: "`\\fs ls 2` for the next page",
+      makeResponse({
+        content: lines,
+        args: "1"
       })
     );
+    */
   }
 
-  async searchItems(query: string, user: User) {
+  async searchItems(query: string) {
     const items = await this.db.searchItems(query);
     let output: string[] = [];
 
-    items.forEach((v) => {
+    for (let i=0;i<items.length;i++) {
+      let v = items[i]
       if (!v.shop.mainLocation) {
-        throw new Error("Missing location!");
+        //throw new Error("Missing location!");
+      } else {
+        let priceStr
+        if (v.kstPrice) {
+          priceStr = `k${v.kstPrice}`
+
+          output.push(
+            `${priceStr} \`${v.itemID}\` at **${v.shop.name}** (${formatLocation(v.shop.mainLocation)})\n`
+          );
+        }
+        
+        /* TODO: tenebra
+        if (v.tstPrice) {
+          if (v.kstPrice) {
+            priceStr = priceStr + " "
+          }
+          priceStr = priceStr + `t${v.tstPrice}`
+        }
+        */
       }
+    }
 
-      output.push(
-        `\`${v.itemID}\` at **${v.shop.name}** (\`${formatLocation(
-          v.shop.mainLocation
-        )}\`)`
-      );
-    });
+    console.log(output)
 
-    this.chatbox.tell(
-      user.uuid,
-      this.generateResponse({
-        title: "Page 1 of 2",
-        content: output,
-        footer: "`\\fs ls 2` for the next page",
-      })
-    );
+    return output;
   }
 }

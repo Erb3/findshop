@@ -1,3 +1,5 @@
+//FIXME: expire old data
+
 import { connectToDatabase } from "./db";
 import { FindShopLogger } from "./logger";
 import { parseConfig } from "./config";
@@ -45,7 +47,6 @@ export const websocketMessageSchema = z
   })
   .refine(
     (data) => !data.items.every((v) => {
-      console.log("REFINEMENT", v.kstPrice, v.tstPrice, !!v.kstPrice, !!v.tstPrice, v.kstPrice === undefined && v.tstPrice === undefined);
       return v.kstPrice === undefined && v.tstPrice === undefined
     }),
     "All items must have either a KST or TST price"

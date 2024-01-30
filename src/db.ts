@@ -35,7 +35,7 @@ export class DatabaseManager {
         ],
       },
       orderBy: {
-        kstPrice: "desc",
+        kstPrice: "asc",
       },
       include: {
         shop: {
@@ -74,7 +74,7 @@ export class DatabaseManager {
 export async function connectToDatabase() {
   FindShopLogger.logger.debug("Connecting to database...");
   const prisma = new PrismaClient({
-    log: ["error", "info", "query", "warn"],
+    log: ["error", "info", "warn"],
   });
 
   await prisma.$connect();

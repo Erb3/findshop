@@ -61,7 +61,7 @@ local function check(msg)
   tassert(msg.info.description, "string", "nil")
   tassert(msg.info.owner, "string", "nil")
   tassert(msg.info.computerID, "number")
-  msg.info.multiShop = tassert(msg.info.multiShop, "boolean", "nil") or false
+  tassert(msg.info.multiShop, "number", "nil")
   tassert(msg.info.software, "table", "nil")
   if msg.info.software then
     tassert(msg.info.software.name, "string", "nil")
