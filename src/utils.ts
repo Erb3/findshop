@@ -42,7 +42,7 @@ interface ResponseGeneratorOptions {
 }
 
 export function makeResponse(options: ResponseGeneratorOptions) {
-  return paginate(options.content, options.args, options.page)
+  return paginate(options.content, options.args, options.page);
   /*
   const perPage = 5;
   const possiblePage = parseInt(options.args.split(" ").at(-1) || "a");
@@ -60,32 +60,32 @@ export function makeResponse(options: ResponseGeneratorOptions) {
   output.push(`\`\\fs ${options.args} nextPage\` for more`)
   return output.join("\n");
   */
-
-
 }
 
 export function paginate(body: string[], args: string, page: number) {
-  const maxChars = 1024
-  const resultsPerPage = 6
-  const pageCount = Math.ceil(body.length / resultsPerPage)
-  const header = `Results ${page}/${pageCount}:`
-  const footer = `\`\\fs ${args} <page>\``
+  const maxChars = 1024;
+  const resultsPerPage = 6;
+  const pageCount = Math.ceil(body.length / resultsPerPage);
+  const header = `Results ${page}/${pageCount}:`;
+  const footer = `\`\\fs ${args} <page>\``;
 
-  console.log(page)
   if (pageCount == 0) return "No results matching search";
 
   if (page < 1) return "Page out of bounds";
   if (page > pageCount) return "Page out of bounds";
 
-  const bodyText = body.slice(
-      (page-1)*resultsPerPage,
-      (page-1)*resultsPerPage+resultsPerPage
-    ).reduce((acc, v) => {
-      return acc + v + "\n"
-    }, "").substring(0,1024-header.length-footer.length-2)
+  const bodyText = body
+    .slice(
+      (page - 1) * resultsPerPage,
+      (page - 1) * resultsPerPage + resultsPerPage
+    )
+    .reduce((acc, v) => {
+      return acc + v + "\n";
+    }, "")
+    .substring(0, 1024 - header.length - footer.length - 2);
 
-  return `${header}\n${bodyText}\n${footer}`
-  
+  return `${header}\n${bodyText}\n${footer}`;
+
   /*
   let bodyi = 0;
   let pgi = 0;
@@ -104,11 +104,10 @@ export function paginate(body: string[], args: string, page: number) {
     }
   }
   */
-
 }
 
-export function sanitizeMarkdown(input: string|string[]) {
+export function sanitizeMarkdown(input: string | string[]) {
   const regex = /[\\`*|]|(krist:\/\/)/g;
   if (typeof input === "string") input = [input];
-  return input.map(v => v.replaceAll(regex, ""));
+  return input.map((v) => v.replaceAll(regex, ""));
 }

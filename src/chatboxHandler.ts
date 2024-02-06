@@ -17,7 +17,7 @@ export async function initChatbox(
 
   chatbox.on("command", async (cmd) => {
     if (!config.ALIASES.includes(cmd.command)) return;
-    console.debug(`${cmd.user.name}: ${cmd.args.join(" ")}`);
+    FindShopLogger.logger.debug(`${cmd.user.name}: ${cmd.args.join(" ")}`);
 
     switch (cmd.args[0]) {
       case null:
