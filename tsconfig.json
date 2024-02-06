@@ -17,7 +17,8 @@
     "allowJs": true,
     "types": [
       "bun-types" // add Bun global
-    ]
+    ],
+    "outDir": "./dist"
   },
-  "include": ["src/**/*"]
+  "include": ["./src/**/*.ts", "./tests/**/*.test.ts"]
 }

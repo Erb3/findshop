@@ -1,356 +1,139 @@
-import { Client } from 'switchchat';
-import { MongoClient } from 'mongodb';
-import { shop_loc_t, shop_t, shop_item_t, search_results_t } from './types';
+//FIXME: expire old data
 
-const sc: Client = new Client(<string>process.env.CB_KEY);
-const db_client: MongoClient = new MongoClient(<string>process.env.DB_URI);
-const database = db_client.db(`SC3`);
-const db_shops = database.collection<shop_t>(`RawShops`);
+import { connectToDatabase } from "./db";
+import { FindShopLogger } from "./logger";
+import { parseConfig } from "./config";
+import { initChatbox } from "./chatboxHandler";
+import { z } from "zod";
 
-const aliases: string[] = ['fs', 'find', 'findshop'];
-const resultsPerPage: number = 7;
-const help_link: string = 'https://github.com/Pixium/findshop#why-are-shops-or-items-missing';
+FindShopLogger.logger.info("Starting FindShop backend...");
+const config = await parseConfig();
+const db = await connectToDatabase();
+await initChatbox(config, db);
 
-sc.defaultName = '&6&lFindShop';
-sc.defaultFormattingMode = 'markdown';
+export const websocketMessageSchema = z
+  .object({
+    type: z.literal("shop"),
+    shopName: z.string(),
+    shopDescription: z.string().optional(),
+    owner: z.string().optional(),
+    computerID: z.number(),
+    multiShop: z.boolean(),
+    softwareName: z.string().optional(),
+    softwareVersion: z.string().optional(),
+    mainLocation: z
+      .object({
+        x: z.number().optional(),
+        y: z.number().optional(),
+        z: z.number().optional(),
+        description: z.string().optional(),
+        dimension: z.enum(["overworld", "nether", "end"]).optional(),
+      })
+      .optional(),
+    items: z.array(
+      z.object({
+        itemID: z.string(),
+        kstPrice: z.number().optional(),
+        tstPrice: z.number().optional(),
+        displayName: z.string(),
+        dynamicPrice: z.boolean(),
+        madeOnDemand: z.boolean(),
+        stock: z.number().optional(),
+        requiresInteraction: z.boolean(),
+        isBuyingItem: z.boolean(),
+        noLimit: z.boolean(),
+      })
+    ),
+  })
+  .refine(
+    (data) => !data.items.every((v) => {
+      return v.kstPrice === undefined && v.tstPrice === undefined
+    }),
+    "All items must have either a KST or TST price"
+  );
 
-/**
- * Generates human-readable coordinates
- * @param location Input coordinates from shop
- */
-function fmt_loc(location: shop_loc_t): string {
-  let shopLocation: string = 'Unknown';
+Bun.serve({
+  fetch(req, server) {
+    if (req.headers.get("Authorization") !== config.WEBSOCKET_TOKEN) {
+      return new Response("Unauthorized", { status: 401 });
+    }
 
-  if (location) {
-    if (location.coordinates && location.coordinates.length === 3) {
-      shopLocation = `\`${Math.round(location.coordinates[0])} ${Math.round(location.coordinates[1])} ${Math.round(
-        location.coordinates[2]
-      )}\``;
-    } else if (location.description) {
-      if (location.description.startsWith('http')) {
-        shopLocation = location.description;
-      } else {
-        shopLocation = `\`${location.description}\``;
+    if (server.upgrade(req)) {
+      FindShopLogger.logger.debug("Client connected!");
+      return;
+    }
+
+    return new Response("Upgrade failed :(", { status: 500 });
+  },
+  websocket: {
+    message: async (ws, msg) => {
+      const tryParse = websocketMessageSchema.safeParse(JSON.parse(msg.toString('utf8')));
+      if (!tryParse.success) {
+        FindShopLogger.logger.error(
+          `Failed to parse websocket message: ${tryParse.error}`
+        );
+        ws.send(
+          JSON.stringify({
+            ok: false,
+            error: `Failed to parse WebSocket message: ${tryParse.error}`,
+          })
+        );
+        return;
       }
-    }
-  }
 
-  return shopLocation;
-}
+      FindShopLogger.logger.debug("Parsed WebSocket message");
 
-/**
- * Generates human-readable prices
- * @param item Input item from shop
- */
-function fmt_price(item: shop_item_t): string {
-  if (item.dynamicPrice) {
-    return `\`${item.prices[0].value}*\` ${item.prices[0].currency}`;
-  } else {
-    return `\`${item.prices[0].value}\` ${item.prices[0].currency}`;
-  }
-}
-
-/**
- * Formats shop names in results
- * @param shop Shop to format
- */
-function fmt_name(shop: shop_t): string {
-  let base_str: string = shop.info.name;
-
-  if (shop.findShop.lastSeen <= Date.now() - 604800000) {
-    base_str += '🕐';
-  }
-
-  return `**${base_str}**`;
-}
-
-/**
- * Handles different pages
- * @param input
- * @param pageNum
- */
-function pg_handler(
-  input: Array<search_results_t>,
-  pageNum?: string
-): { pageNumber: number; results: search_results_t[] } {
-  let pageNumber: number = 1;
-  if (pageNum) {
-    pageNumber = Number(pageNum);
-    input.splice(0, resultsPerPage * (pageNumber - 1));
-  }
-
-  if (input.length > resultsPerPage) {
-    input.length = resultsPerPage;
-  }
-
-  return {
-    pageNumber: pageNumber,
-    results: input,
-  };
-}
-
-/**
- * Format header & footer lines in chatbox messages
- * @param input_str String to place in the middle of the header/footer
- */
-function fmt_header(input_str: string): string {
-  let barSize: number = 50 - 1;
-  const short: string[] = ['l', 'i', 't', '[', ']', ' '];
-
-  for (let i: number = 0; i < input_str.length; i++) {
-    if (short.includes(input_str[i])) {
-      barSize -= 0.4;
-    } else {
-      barSize--;
-    }
-  }
-
-  barSize = Math.ceil(barSize / 2);
-
-  let barText: string = '';
-
-  for (let i = 0; i < barSize; i++) {
-    barText += '=';
-  }
-
-  return `${barText} ${input_str} ${barText}`;
-}
-
-// Chatbox Command Handler
-sc.on('command', async (cmd) => {
-  if (aliases.includes(cmd.command)) {
-    console.debug(`${cmd.user.name}: ${cmd.args.join(' ')}`);
-    try {
-      const shops: Array<shop_t> = await db_shops
-        .find({}, { collation: { locale: 'en_US', strength: 2 } })
-        .sort({ 'info.name': 1 })
-        .toArray();
-      if (cmd.args[0] == null || cmd.args[0] === 'help') {
-        // Help message
-        await sc.tell(
-          cmd.user.name,
-          `FindShop helps locate ShopSync-compatible shops buying or selling an item.\n\`\\fs list\` - List detected shops\n\`\\fs stats\` - Statistics (currently only shop count)\n\`\\fs buy [item]\` - Finds shops selling *[item]*\n\`\\fs sell [item]\` - Finds shops buying *[item]*\n\`\\fs shop [name]\` - Finds shops named *[name]* and their info`
-        );
-      } else if (cmd.args[0] === 'stats') {
-        // Link to stats dashboard
-        await sc.tell(
-          cmd.user.name,
-          `Detailed shop statistics can be viewed [here](https://charts.mongodb.com/charts-findshop-lwmvk/public/dashboards/649f2873-58ae-45ef-8079-03201394a531).`
-        );
-      } else if (cmd.args[0] === 'list' || cmd.args[0] === 'l') {
-        // List shops
-        const resultsLength: number = shops.length;
-
-        let pageNumber: number = 1;
-        if (cmd.args[1]) {
-          pageNumber = Number(cmd.args[1]);
-          shops.splice(0, 10 * (pageNumber - 1));
+      const data = tryParse.data;
+      const shop = await db.prisma.shop.findFirst({
+        where: {
+          computerID: data.computerID,
+          multiShop: data.multiShop,
         }
+      })
 
-        if (shops.length > 10) {
-          shops.length = 10;
-        }
-
-        let printResults: string = '';
-        for (const shop of shops) {
-          printResults += `\n${fmt_name(shop)} at ${fmt_loc(shop.info.location)}`;
-        }
-
-        await sc.tell(
-          cmd.user.name,
-          `Results:\n${fmt_header(
-            `Page ${pageNumber} of ${Math.ceil(resultsLength / 10)}`
-          )} ${printResults}\n ${fmt_header('`\\fs list [page]` for more')}`
-        );
-      } else if (cmd.args[0] === 'buy' || cmd.args[0] === 'b' || cmd.args[1] == null) {
-        // Find shops selling search_item
-        let search_item: string = cmd.args[1];
-        if (cmd.args[1] == null) {
-          search_item = cmd.args[0];
-        }
-
-        let results: Array<search_results_t> = [];
-        for (const shop of shops) {
-          // Check item length because if this is zero, it will crash!!! Thanks books.kst
-          if (shop.items.length > 0) {
-            for (const item of shop.items) {
-              if (item.item.name == null) {
-                console.warn(`A shop (${shop.info.name}) is missing an item name!!`);
-              } else if (
-                (item.item.name.toLowerCase().includes(search_item.toLowerCase()) ||
-                  item.item.displayName.toLowerCase().includes(search_item.toLowerCase())) &&
-                !item.shopBuysItem &&
-                (item.stock !== 0 || item.madeOnDemand)
-              ) {
-                item.item.name = item.item.name.replace('minecraft:', '');
-                results.push({
-                  shop: shop,
-                  item: item,
-                });
-              }
-            }
-          } else {
-            console.warn(`A shop (${shop.info.name}) is broadcasting an empty items array!!`);
-          }
-        }
-
-        if (results.length === 0) {
-          await sc.tell(
-            cmd.user.name,
-            `**Error!** FindShop was unable to find any shops with \`${search_item}\` in stock. [Why are shops and items missing?](${help_link})`
-          );
-        } else {
-          const resultsLength: number = results.length;
-
-          const handler_out = pg_handler(results, cmd.args[2]);
-          results = handler_out.results;
-          const pageNumber = handler_out.pageNumber;
-
-          let printResults: string = '';
-          for (const result of results) {
-            printResults += `\n\`${result.item.item.name}\` at ${fmt_name(result.shop)} (${fmt_loc(
-              result.shop.info.location
-            )}) for ${fmt_price(result.item)} (\`${result.item.stock}\` in stock)`;
-          }
-
-          await sc.tell(
-            cmd.user.name,
-            `Results:\n${fmt_header(
-              `Page ${pageNumber} of ${Math.ceil(resultsLength / resultsPerPage)}`
-            )} ${printResults}\n${fmt_header('`\\fs buy [item] [page]` for more')}`
-          );
-        }
-      } else if (cmd.args[0] === 'sell' || cmd.args[0] === 'sl') {
-        // Find shops buying search_item
-        const search_item: string = cmd.args[1];
-
-        let results: Array<search_results_t> = [];
-        for (const shop of shops) {
-          for (const item of shop.items) {
-            if (item.item.name == null) {
-              console.warn(`A shop (${shop.info.name}) is missing an item name!!`);
-            } else if (
-              (item.item.name.toLowerCase().includes(search_item.toLowerCase()) ||
-                item.item.displayName.toLowerCase().includes(search_item.toLowerCase())) &&
-              item.shopBuysItem
-            ) {
-              item.item.name = item.item.name.replace('minecraft:', '');
-              results.push({
-                shop: shop,
-                item: item,
-              });
-            }
-          }
-        }
-
-        if (results.length === 0) {
-          await sc.tell(
-            cmd.user.name,
-            `**Error!** FindShop was unable to find any shops buying \`${search_item}\`. [Why are shops and items missing?](${help_link})`
-          );
-        } else {
-          const resultsLength: number = results.length;
-
-          const handler_out = pg_handler(results, cmd.args[2]);
-          results = handler_out.results;
-          const pageNumber: number = handler_out.pageNumber;
-
-          let printResults: string = '';
-          for (const result of results) {
-            printResults += `\n\`${result.item.item.name}\` at ${fmt_name(result.shop)} (${fmt_loc(
-              result.shop.info.location
-            )}) for ${fmt_price(result.item)}`;
-          }
-
-          await sc.tell(
-            cmd.user.name,
-            `Results:\n${fmt_header(
-              `Page ${pageNumber} of ${Math.ceil(resultsLength / resultsPerPage)}`
-            )}${printResults}\n${fmt_header('`\\fs sell [item] [page]` for more')}`
-          );
-        }
-      } else if (cmd.args[0] === 'shop' || cmd.args[0] === 'sh') {
-        // Find shop named search_name
-        const search_name: string = cmd.args[1];
-
-        const results: Array<shop_t> = [];
-        for (const shop of shops) {
-          if (shop.info.name.toLowerCase().includes(search_name.toLowerCase())) {
-            results.push(shop);
-          }
-        }
-
-        if (results.length == 0) {
-          await sc.tell(
-            cmd.user.name,
-            `**Error!** FindShop was unable to find any shops named \`${search_name}\`. [Why are shops and items missing?](${help_link})`
-          );
-        } else {
-          let printResults: string = '';
-          if (
-            (results.length > 1 && cmd.args[2] == null) ||
-            (cmd.args[2] != null && Number(cmd.args[2]) > results.length)
-          ) {
-            for (let i: number = 0; i < results.length; i++) {
-              printResults += `\n(\`${i + 1}\`) ${fmt_name(results[i])}`;
-            }
-
-            await sc.tell(
-              cmd.user.name,
-              `Multiple shops were found. Run \`\\fs sh ${search_name} [number]\` to see specific information. ${printResults}`
-            );
-          } else {
-            let display_shop_idx: number = 1;
-            if (cmd.args[2] != null) {
-              display_shop_idx = Number(cmd.args[2]);
-            }
-            const display_shop: shop_t = results[display_shop_idx - 1];
-
-            printResults = fmt_name(display_shop);
-            if (display_shop.info.owner) {
-              printResults += ` *by ${display_shop.info.owner}*`;
-            }
-            printResults += `\n`;
-
-            if (display_shop.info.location) {
-              printResults += `Located at ${fmt_loc(display_shop.info.location)}`;
-              if (display_shop.info.location.dimension) {
-                printResults += ` in the \`${display_shop.info.location.dimension}\``;
-              }
-              if (display_shop.info.otherLocations && display_shop.info.otherLocations.length > 0) {
-                printResults += ` +\`${display_shop.info.otherLocations.length}\` other locations`;
-              }
-              printResults += `\n`;
-            }
-
-            printResults += `Last seen \`${new Date(display_shop.findShop.lastSeen).toUTCString()}\`\n`;
-
-            if (display_shop.info.software) {
-              printResults += `Running \`${display_shop.info.software.name}\``;
-              if (display_shop.info.software.version) {
-                printResults += ` \`${display_shop.info.software.version}\``;
-              }
-              printResults += `\n`;
-            }
-
-            printResults += `Selling \`${display_shop.items.length}\` items`;
-            await sc.tell(cmd.user.name, printResults);
-          }
-        }
+      if (!shop) {
+        await db.createShop(data);
+        return;
       }
-    } catch (err) {
-      console.error(err);
-      await sc.tell(cmd.user.name, `An error occurred!\n\`\`\`${err}\`\`\``);
-    }
-  }
-});
 
-sc.on('ready', () => {
-  console.log('Started FindShop Chatbox Server!');
+      await db.prisma.shop.update({
+        where: {
+          id: shop.id,
+        },
+        data: {
+          description: data.shopDescription,
+          multiShop: data.multiShop,
+          name: data.shopName,
+          owner: data.owner,
+          softwareName: data.softwareName,
+          softwareVersion: data.softwareVersion,
+          mainLocation: {
+            upsert: {
+              create: {
+                description: data.mainLocation?.description,
+                dimension: data.mainLocation?.dimension,
+                x: data.mainLocation?.x,
+                y: data.mainLocation?.y,
+                z: data.mainLocation?.z,
+              },
+              update: {
+                description: data.mainLocation?.description,
+                dimension: data.mainLocation?.dimension,
+                x: data.mainLocation?.x,
+                y: data.mainLocation?.y,
+                z: data.mainLocation?.z,
+              }
+            }
+          },
+          items: {
+            deleteMany: {},
+            createMany: {
+              data: data.items
+            }
+          }
+        }
+      });
+    },
+  },
+  port: 8080,
 });
-
-process.on('exit', async () => {
-  await db_client.close();
-});
-
-sc.connect();

@@ -15,17 +15,22 @@
     "slimit75"
   ],
   "scripts": {
-    "build": "npx tsc --project tsconfig.json",
-    "restart": "pm2 restart 0",
-    "start": "pm2 start 0",
-    "stop": "pm2 stop 0"
+    "build": "tsc"
   },
   "dependencies": {
-    "mongodb": "^5.8.0",
-    "switchchat": "^3.2.1"
+    "@decs/typeschema": "^0.12.1",
+    "@fastify/websocket": "^8.3.0",
+    "@prisma/client": "5.7.0",
+    "elysia": "^0.7.30",
+    "fastify": "^4.25.1",
+    "fastify-plugin": "^4.5.1",
+    "switchchat": "^3.2.1",
+    "tslog": "^4.9.2",
+    "zod": "^3.22.4"
   },
   "devDependencies": {
-    "bun-types": "latest"
+    "bun-types": "latest",
+    "prisma": "^5.7.0"
   },
   "peerDependencies": {
     "typescript": "^5.1.6"
