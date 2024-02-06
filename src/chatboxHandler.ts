@@ -33,17 +33,7 @@ export async function initChatbox(
       case "list":
       case "l":
       case "ls": {
-        let shops = await chatboxHandler.listShops();
-        let page = parseInt(cmd.args[2]) || 1;
-
-        chatboxHandler.chatbox.tell(
-          cmd.user.uuid,
-          makeResponse({
-            content: shops,
-            page,
-            args: "list ",
-          })
-        );
+        await chatboxHandler.sendShopList(cmd.user, cmd.args);
         break;
       }
 
@@ -60,30 +50,19 @@ export async function initChatbox(
 
       case "buy":
       case "b": {
-        let items = await chatboxHandler.searchItems(cmd.args[1]);
-        let page = parseInt(cmd.args[2]) || 1;
-        chatboxHandler.chatbox.tell(
-          cmd.user.uuid,
-          makeResponse({
-            content: items,
-            page: page,
-            args: "buy " + cmd.args[1],
-          })
+        chatboxHandler.sendItemSearch(
+          cmd.user,
+          cmd.args[1],
+          parseInt(cmd.args[2])
         );
         break;
       }
 
       default: {
-        let items = await chatboxHandler.searchItems(cmd.args[0]);
-        let page = parseInt(cmd.args[1]);
-        if (isNaN(page)) page = 1;
-        chatboxHandler.chatbox.tell(
-          cmd.user.uuid,
-          makeResponse({
-            content: items,
-            page: page,
-            args: cmd.args[0],
-          })
+        chatboxHandler.sendItemSearch(
+          cmd.user,
+          cmd.args[0],
+          parseInt(cmd.args[1])
         );
         break;
       }
@@ -98,8 +77,6 @@ export async function initChatbox(
   chatbox.connect();
 }
 
-const short: string[] = ["l", "i", "t", "[", "]", " "];
-
 export class ChatboxHandler {
   chatbox: Client;
   db: DatabaseManager;
@@ -113,29 +90,6 @@ export class ChatboxHandler {
     this.chatbox = chatbox;
     this.db = db;
     this.config = config;
-  }
-
-  generateLine(text?: string) {
-    if (text) {
-      let length = this.config.CHAT_WIDTH - 5;
-
-      text
-        .replace("`", "")
-        .split("")
-        .forEach((char) => {
-          if (short.includes(char)) {
-            length -= 0.4;
-          } else {
-            length--;
-          }
-        });
-
-      const toRepeat = Math.round(length / 2);
-
-      return `${"=".repeat(toRepeat)} ${text} ${"=".repeat(toRepeat)}`;
-    } else {
-      return "=".repeat(this.config.CHAT_WIDTH);
-    }
   }
 
   async sendHelp(user: User) {
@@ -158,7 +112,7 @@ export class ChatboxHandler {
     );
   }
 
-  async searchItems(query: string) {
+  async sendItemSearch(user: User, query: string, page: number | undefined) {
     const items = await this.db.searchItems(query);
     const output: string[] = [];
 
@@ -173,18 +127,33 @@ export class ChatboxHandler {
       );
     });
 
-    return output;
+    this.chatbox.tell(
+      user.uuid,
+      makeResponse({
+        content: output,
+        page: page || 1,
+        args: "buy " + query,
+      })
+    );
   }
 
-  async listShops() {
+  async sendShopList(user: User, args: string[]) {
     const shops = await this.db.getAllShops();
-    let output: string[] = [];
+    const output: string[] = [];
 
     shops.forEach((shop) => {
       if (!shop.mainLocation) return;
       output.push(`${shop.name} at ${formatLocation(shop.mainLocation)}`);
     });
 
-    return output;
+    const page = parseInt(args[2]) || 1;
+    this.chatbox.tell(
+      user.uuid,
+      makeResponse({
+        content: output,
+        page,
+        args: "list ",
+      })
+    );
   }
 }
