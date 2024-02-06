@@ -1,5 +1,3 @@
-//FIXME: expire old data
-
 import { connectToDatabase } from "./db";
 import { FindShopLogger } from "./logger";
 import { parseConfig } from "./config";
@@ -18,7 +16,7 @@ export const websocketMessageSchema = z
     shopDescription: z.string().optional(),
     owner: z.string().optional(),
     computerID: z.number(),
-    multiShop: z.boolean(),
+    multiShop: z.boolean().default(false),
     softwareName: z.string().optional(),
     softwareVersion: z.string().optional(),
     mainLocation: z
@@ -46,9 +44,10 @@ export const websocketMessageSchema = z
     ),
   })
   .refine(
-    (data) => !data.items.every((v) => {
-      return v.kstPrice === undefined && v.tstPrice === undefined
-    }),
+    (data) =>
+      !data.items.every((v) => {
+        return v.kstPrice === undefined && v.tstPrice === undefined;
+      }),
     "All items must have either a KST or TST price"
   );
 
@@ -67,7 +66,9 @@ Bun.serve({
   },
   websocket: {
     message: async (ws, msg) => {
-      const tryParse = websocketMessageSchema.safeParse(JSON.parse(msg.toString('utf8')));
+      const tryParse = websocketMessageSchema.safeParse(
+        JSON.parse(msg.toString("utf8"))
+      );
       if (!tryParse.success) {
         FindShopLogger.logger.error(
           `Failed to parse websocket message: ${tryParse.error}`
@@ -88,8 +89,8 @@ Bun.serve({
         where: {
           computerID: data.computerID,
           multiShop: data.multiShop,
-        }
-      })
+        },
+      });
 
       if (!shop) {
         await db.createShop(data);
@@ -122,16 +123,16 @@ Bun.serve({
                 x: data.mainLocation?.x,
                 y: data.mainLocation?.y,
                 z: data.mainLocation?.z,
-              }
-            }
+              },
+            },
           },
           items: {
             deleteMany: {},
             createMany: {
-              data: data.items
-            }
-          }
-        }
+              data: data.items,
+            },
+          },
+        },
       });
     },
   },
