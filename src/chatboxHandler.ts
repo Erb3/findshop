@@ -160,25 +160,18 @@ export class ChatboxHandler {
 
   async searchItems(query: string) {
     const items = await this.db.searchItems(query);
-    let output: string[] = [];
+    const output: string[] = [];
 
-    for (let i = 0; i < items.length; i++) {
-      let v = items[i];
-      if (!v.shop.mainLocation) {
-        //throw new Error("Missing location!");
-      } else {
-        let priceStr;
-        if (v.kstPrice) {
-          priceStr = `k${v.kstPrice}`;
+    items.forEach((item) => {
+      if (!item.shop.mainLocation) return;
+      const price = item.kstPrice ? `k${item.kstPrice}` : `t${item.tstPrice}`;
 
-          output.push(
-            `${priceStr} \`${v.itemID}\` at **${
-              v.shop.name
-            }** (${formatLocation(v.shop.mainLocation)})\n`
-          );
-        }
-      }
-    }
+      output.push(
+        `${price} \`${item.itemID}\` at **${item.shop.name}** (${formatLocation(
+          item.shop.mainLocation
+        )})`
+      );
+    });
 
     return output;
   }
