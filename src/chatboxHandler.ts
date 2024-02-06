@@ -32,9 +32,20 @@ export async function initChatbox(
 
       case "list":
       case "l":
-      case "ls":
-        chatboxHandler.sendShopsList(cmd.user);
+      case "ls": {
+        let shops = await chatboxHandler.listShops();
+        let page = parseInt(cmd.args[2]) || 1;
+
+        chatboxHandler.chatbox.tell(
+          cmd.user.uuid,
+          makeResponse({
+            content: shops,
+            page,
+            args: "list ",
+          })
+        );
         break;
+      }
 
       case "sell":
       case "sl":
@@ -48,10 +59,9 @@ export async function initChatbox(
         break;
 
       case "buy":
-      case "b":
+      case "b": {
         let items = await chatboxHandler.searchItems(cmd.args[1]);
-        let page = parseInt(cmd.args[2]) 
-        if (isNaN(page)) page = 1;
+        let page = parseInt(cmd.args[2]) || 1;
         chatboxHandler.chatbox.tell(
           cmd.user.uuid,
           makeResponse({
@@ -60,24 +70,23 @@ export async function initChatbox(
             args: "buy " + cmd.args[1],
           })
         );
-        console.log(cmd.args[0])
         break;
+      }
 
-      default:
-        {
-          let items = await chatboxHandler.searchItems(cmd.args[0]);
-          let page = parseInt(cmd.args[1]) 
-          if (isNaN(page)) page = 1;
-          chatboxHandler.chatbox.tell(
-            cmd.user.uuid,
-            makeResponse({
-              content: items,
-              page: page,
-              args: cmd.args[0],
-            })
-          );
-          break;
-        }
+      default: {
+        let items = await chatboxHandler.searchItems(cmd.args[0]);
+        let page = parseInt(cmd.args[1]);
+        if (isNaN(page)) page = 1;
+        chatboxHandler.chatbox.tell(
+          cmd.user.uuid,
+          makeResponse({
+            content: items,
+            page: page,
+            args: cmd.args[0],
+          })
+        );
+        break;
+      }
     }
   });
 
@@ -149,53 +158,39 @@ export class ChatboxHandler {
     );
   }
 
-  async sendShopsList(user: User) {
-    return this.sendDisabledFeature(user);
-
-    /*
-    const shops = await this.db.getAllShops();
-    const lines = shops.map((shop) => `**${shop.name}** at ${formatLocation(shop)}`);
-
-    this.chatbox.tell(
-      user.uuid,
-      makeResponse({
-        content: lines,
-        args: "1"
-      })
-    );
-    */
-  }
-
   async searchItems(query: string) {
     const items = await this.db.searchItems(query);
     let output: string[] = [];
 
-    for (let i=0;i<items.length;i++) {
-      let v = items[i]
+    for (let i = 0; i < items.length; i++) {
+      let v = items[i];
       if (!v.shop.mainLocation) {
         //throw new Error("Missing location!");
       } else {
-        let priceStr
+        let priceStr;
         if (v.kstPrice) {
-          priceStr = `k${v.kstPrice}`
+          priceStr = `k${v.kstPrice}`;
 
           output.push(
-            `${priceStr} \`${v.itemID}\` at **${v.shop.name}** (${formatLocation(v.shop.mainLocation)})\n`
+            `${priceStr} \`${v.itemID}\` at **${
+              v.shop.name
+            }** (${formatLocation(v.shop.mainLocation)})\n`
           );
         }
-        
-        /* TODO: tenebra
-        if (v.tstPrice) {
-          if (v.kstPrice) {
-            priceStr = priceStr + " "
-          }
-          priceStr = priceStr + `t${v.tstPrice}`
-        }
-        */
       }
     }
 
-    console.log(output)
+    return output;
+  }
+
+  async listShops() {
+    const shops = await this.db.getAllShops();
+    let output: string[] = [];
+
+    shops.forEach((shop) => {
+      if (!shop.mainLocation) return;
+      output.push(`${shop.name} at ${formatLocation(shop.mainLocation)}`);
+    });
 
     return output;
   }

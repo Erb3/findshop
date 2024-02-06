@@ -12,6 +12,7 @@ export const configSchema = z.object({
   GITHUB_LINK: z.string().default("https://github.com/Pixium/findshop"),
   CHAT_WIDTH: z.number().default(49),
   WEBSOCKET_TOKEN: z.string(),
+  DATABASE_URL: z.string(),
 });
 
 export async function parseConfig() {

@@ -1,6 +1,6 @@
 {
   "name": "findshop",
-  "version": "1.1.1",
+  "version": "2.0.0",
   "description": "Server for FindShop Chatbox, made for SwitchCraftCC",
   "main": "src/index.ts",
   "repository": "https://github.com/Pixium/findshop.git",
@@ -15,7 +15,8 @@
     "slimit75"
   ],
   "scripts": {
-    "build": "tsc"
+    "build": "tsc",
+    "start": "bun run src/index.ts"
   },
   "dependencies": {
     "@decs/typeschema": "^0.12.1",
