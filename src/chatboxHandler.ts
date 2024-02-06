@@ -1,6 +1,6 @@
 import { Client, User } from "switchchat";
 import { z } from "zod";
-import { formatLocation, makeResponse } from "./utils";
+import { formatLocation, paginate } from "./utils";
 import { configSchema } from "./config";
 import { DatabaseManager } from "./db";
 import { FindShopLogger } from "./logger";
@@ -129,7 +129,7 @@ export class ChatboxHandler {
 
     this.chatbox.tell(
       user.uuid,
-      makeResponse({
+      paginate({
         content: output,
         page: page || 1,
         args: "buy " + query,
@@ -149,7 +149,7 @@ export class ChatboxHandler {
     const page = parseInt(args[2]) || 1;
     this.chatbox.tell(
       user.uuid,
-      makeResponse({
+      paginate({
         content: output,
         page,
         args: "list ",

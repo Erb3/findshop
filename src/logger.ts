@@ -8,11 +8,3 @@ export class FindShopLogger {
     prettyLogTimeZone: "local",
   });
 }
-
-// export default fp(async (fastify, options) => {
-//   const logger: Logger<ILogObj> = fastify.addHook("onResponse", (req, res) => {
-//     fastify.logger.debug(
-//       `${req.ip} ${req.method} ${res.statusCode} \t ${req.url}`
-//     );
-//   });
-// });
