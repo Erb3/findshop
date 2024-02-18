@@ -9,14 +9,16 @@ const config = await parseConfig();
 const db = await connectToDatabase();
 await initChatbox(config, db);
 
+const validDimensions = ["overworld", "nether", "end"];
+
 export const websocketMessageSchema = z
   .object({
     type: z.literal("shop"),
     shopName: z.string(),
     shopDescription: z.string().optional(),
     owner: z.string().optional(),
-    computerID: z.number(),
-    multiShop: z.boolean().default(false),
+    computerID: z.number().int(),
+    multiShop: z.number().int().optional(),
     softwareName: z.string().optional(),
     softwareVersion: z.string().optional(),
     mainLocation: z
@@ -25,7 +27,7 @@ export const websocketMessageSchema = z
         y: z.number().optional(),
         z: z.number().optional(),
         description: z.string().optional(),
-        dimension: z.enum(["overworld", "nether", "end"]).optional(),
+        dimension: z.string().toLowerCase().transform(v => validDimensions.includes(v) && v || undefined).optional(),
       })
       .optional(),
     items: z.array(

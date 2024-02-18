@@ -13,7 +13,7 @@ model Shop {
   description     String?
   owner           String?
   computerID      Int
-  multiShop       Boolean
+  multiShop       Int?
   softwareName    String?
   softwareVersion String?
   lastSeen        DateTime  @default(now())
