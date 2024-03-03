@@ -189,6 +189,15 @@ export class DatabaseManager {
         });
     }
 
+    async getShop(computerID: number, multiShop: number | undefined) {
+        return this.prisma.shop.findFirst({
+            where: {
+                computerID: computerID,
+                multiShop: multiShop
+            }
+        })
+    }
+
     async getStatistics() {
         return {
             shopCount: await this.prisma.shop.count(),

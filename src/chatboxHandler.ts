@@ -52,7 +52,7 @@ export async function initChatbox(
 
             case "shop":
             case "sh":
-                chatboxHandler.sendDisabledFeature(cmd.user);
+                chatboxHandler.getShopInfo(cmd.user, cmd.args[1])
                 break;
 
             case "buy":
@@ -141,7 +141,7 @@ export class ChatboxHandler {
             output.push({
                 price: kstPrice.value,
                 stock: item.stock,
-                text: `${price} (${item.stock ?? "-"}) \`${item.name}\` at **${item.shop.name}** (${formatLocation(
+                text: `${price} (${item.stock ?? "-"}) \`${item.name}\` at **${item.shop.name}** \`${item.shop.computerID}${item.shop.multiShop ? ";":""}${item.shop.multiShop ?? ""}\` (${formatLocation(
                     mainLocation as Prisma.LocationCreateInput
                 )})`
             });
@@ -178,7 +178,7 @@ export class ChatboxHandler {
         shops.forEach((shop) => {
             let mainLocation: any = shop.locations.find(loc => loc.main === true) ?? {}
 
-            output.push(`${shop.name} at ${formatLocation(mainLocation)}`);
+            output.push(`${shop.name} (\`${shop.computerID}${shop.multiShop ? ";":""}${shop.multiShop ?? ""}\`) at ${formatLocation(mainLocation)}`);
         });
 
         this.chatbox.tell(
@@ -189,6 +189,21 @@ export class ChatboxHandler {
                 args: "list ",
             })
         );
+    }
+
+    async getShopInfo(user: User, query: string) {
+        if (!query) return this.chatbox.tell(user.uuid, "Shop not found");
+        let id = query.split(";")
+        if (id.length > 2) return this.chatbox.tell(user.uuid, "Invalid shop id");
+        let cid = parseInt(id[0])
+        let multishop = parseInt(id[1])
+        
+        if (isNaN(cid) || (isNaN(multishop) && id[1])) return this.chatbox.tell(user.uuid, "Invalid shop id");
+        
+        let shop = await this.db.getShop(cid, multishop || undefined);
+        if (!shop) return this.chatbox.tell(user.uuid, "Shop not found");
+
+        this.chatbox.tell(user.uuid, `Shop name: ${shop.name}`);
     }
 
     async sendStats(user: User) {
