@@ -39,9 +39,15 @@ export async function initChatbox(
 
       case "sell":
       case "sl":
-      case "s":
-        chatboxHandler.sendDisabledFeature(cmd.user);
+      case "s": {
+        chatboxHandler.sendItemSearch(
+          cmd.user,
+          cmd.args[1],
+          parseInt(cmd.args[2]),
+          true
+        );    
         break;
+      }
 
       case "shop":
       case "sh":
@@ -53,7 +59,8 @@ export async function initChatbox(
         chatboxHandler.sendItemSearch(
           cmd.user,
           cmd.args[1],
-          parseInt(cmd.args[2])
+          parseInt(cmd.args[2]),
+	  false
         );
         break;
       }
@@ -62,7 +69,8 @@ export async function initChatbox(
         chatboxHandler.sendItemSearch(
           cmd.user,
           cmd.args[0],
-          parseInt(cmd.args[1])
+          parseInt(cmd.args[1]),
+	  false
         );
         break;
       }
@@ -112,12 +120,14 @@ export class ChatboxHandler {
     );
   }
 
-  async sendItemSearch(user: User, query: string, page: number | undefined) {
+  async sendItemSearch(user: User, query: string, page: number | undefined, sell: boolean) {
     const items = await this.db.searchItems(query);
     const output: string[] = [];
 
     items.forEach((item) => {
       if (!item.shop.mainLocation) return;
+      if (item.isBuyingItem && !sell) return; // were looking for shops selling items, shop is buying
+      if (!item.isBuyingItem && sell) return; // were looking for shops buying items, shop is selling
       const price = item.kstPrice ? `k${item.kstPrice}` : `t${item.tstPrice}`;
 
       output.push(
@@ -132,7 +142,7 @@ export class ChatboxHandler {
       paginate({
         content: output,
         page: page || 1,
-        args: "buy " + query,
+        args: (sell ? "sell " : "buy ") + query,
       })
     );
   }
