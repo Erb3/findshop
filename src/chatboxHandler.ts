@@ -123,6 +123,7 @@ export class ChatboxHandler {
   async sendItemSearch(user: User, query: string, page: number | undefined, sell: boolean) {
     const items = await this.db.searchItems(query);
     const output: string[] = [];
+    const noStock: string[] = [];
 
     items.forEach((item) => {
       if (!item.shop.mainLocation) return;
@@ -130,8 +131,8 @@ export class ChatboxHandler {
       if (!item.isBuyingItem && sell) return; // were looking for shops buying items, shop is selling
       const price = item.kstPrice ? `k${item.kstPrice}` : `t${item.tstPrice}`;
 
-      output.push(
-        `${price} \`${item.itemID}\` at **${item.shop.name}** (${formatLocation(
+      (item.stock>0 ? output : noStock).push(
+        `${price} (${item.stock}) \`${item.itemID}\` at **${item.shop.name}** (${formatLocation(
           item.shop.mainLocation
         )})`
       );
@@ -140,7 +141,7 @@ export class ChatboxHandler {
     this.chatbox.tell(
       user.uuid,
       paginate({
-        content: output,
+        content: output.concat(noStock),
         page: page || 1,
         args: (sell ? "sell " : "buy ") + query,
       })
