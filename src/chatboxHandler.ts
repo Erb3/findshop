@@ -126,13 +126,12 @@ export class ChatboxHandler {
         const output: any = [];
 
         items.forEach((item) => {
-            console.log(item)
             if (item.shopBuysItem && !sell) return; // were looking for shops selling items, shop is buying
             if (!item.shopBuysItem && sell) return; // were looking for shops buying items, shop is selling
 
-            let prices = item.prices.reduce((acc: any, price) => {acc[price.currency] = price; return acc}, {})
+            let prices = item.prices.reduce((acc: any, price) => { acc[price.currency] = price; return acc }, {})
             let kstPrice = prices["KST"]
-            
+
             if (!kstPrice) return; // other currencies wip
 
             let mainLocation = item.shop.locations.find(loc => loc.main === true) ?? {}
@@ -151,11 +150,11 @@ export class ChatboxHandler {
         output.sort((a: any, b: any) => {
             let stockA = a.stock === 0 ? 0 : 1;
             let stockB = b.stock === 0 ? 0 : 1;
-          
+
             if (stockA !== stockB) {
                 return stockB - stockA;
             }
-        
+
             return a.price - b.price;
         });
 
@@ -171,31 +170,30 @@ export class ChatboxHandler {
         );
     }
 
-    
+
     async sendShopList(user: User, args: string[], page: number) {
-      const shops = await this.db.getAllShops();
-      const output: string[] = [];
-  
-      shops.forEach((shop) => {
-        let mainLocation: any = shop.locations.find(loc => loc.main === true) ?? {}
-        
-        output.push(`${shop.name} at ${formatLocation(mainLocation)}`);
-      });
-  
-      console.log(page)
-      this.chatbox.tell(
-        user.uuid,
-        paginate({
-          content: output,
-          page: page || 1,
-          args: "list ",
-        })
-      );
+        const shops = await this.db.getAllShops();
+        const output: string[] = [];
+
+        shops.forEach((shop) => {
+            let mainLocation: any = shop.locations.find(loc => loc.main === true) ?? {}
+
+            output.push(`${shop.name} at ${formatLocation(mainLocation)}`);
+        });
+
+        this.chatbox.tell(
+            user.uuid,
+            paginate({
+                content: output,
+                page: page || 1,
+                args: "list ",
+            })
+        );
     }
 
     async sendStats(user: User) {
         let stats = await this.db.getStatistics();
 
-        this.chatbox.tell(user.uuid,`Stats:\nShop count: \`${stats.shopCount}\`\nLocation count: \`${stats.locationCount}\`\nTotal item count: \`${stats.itemCount}\`\nMore stats will be added soon!`);
+        this.chatbox.tell(user.uuid, `Stats:\nShop count: \`${stats.shopCount}\`\nLocation count: \`${stats.locationCount}\`\nTotal item count: \`${stats.itemCount}\`\nMore stats will be added soon!`);
     }
 }

@@ -15,20 +15,25 @@ Bun.serve({
         if (req.headers.get("Authorization") !== config.WEBSOCKET_TOKEN) {
             return new Response("Unauthorized", { status: 401 });
         }
-    
+
         if (server.upgrade(req)) {
             FindShopLogger.logger.debug("Client connected!");
             return;
         }
-    
+
         return new Response("Upgrade failed :(", { status: 500 });
     },
     websocket: {
         message: async (ws, msg) => {
+            if (msg.length > 1<<20) {
+                FindShopLogger.logger.error("Received too long message");
+                return;
+            }
+
             const tryParse = websocketMessageSchema.safeParse(JSON.parse(msg.toString("utf8")));
             if (!tryParse.success) {
                 FindShopLogger.logger.error(`Failed to parse websocket message: ${tryParse.error}`);
-                console.log(msg)
+                FindShopLogger.logger.error(msg)
                 return;
             }
             FindShopLogger.logger.debug("Parsed WebSocket message");
