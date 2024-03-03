@@ -131,8 +131,9 @@ export class ChatboxHandler {
       if (!item.isBuyingItem && sell) return; // were looking for shops buying items, shop is selling
       const price = item.kstPrice ? `k${item.kstPrice}` : `t${item.tstPrice}`;
 
-      (item.stock>0 ? output : noStock).push(
-        `${price} (${item.stock}) \`${item.itemID}\` at **${item.shop.name}** (${formatLocation(
+      // evil:
+      (item.stock ? (item.stock>0 ? output : noStock) : output).push(
+        `${price} (${item.stock || "-"}) \`${item.itemID}\` at **${item.shop.name}** (${formatLocation(
           item.shop.mainLocation
         )})`
       );
