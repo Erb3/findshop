@@ -109,7 +109,7 @@ export class ChatboxHandler {
       \`\\fs stats\` - Statistics - currently only basic
       \`\\fs buy [item]\` - Finds shops selling *[item]*
       \`\\fs sell [item]\` - Finds shops buying *[item]*
-      \`\\fs shop [name]\` - Finds shops named *[name]* and their info
+      \`\\fs shop [id]\` - Finds shop based on computer *[id]* and their info
       For more information, check [the GitHub repository](${this.config.GITHUB_LINK})`
         );
     }
