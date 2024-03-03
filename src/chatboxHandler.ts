@@ -205,7 +205,7 @@ export class ChatboxHandler {
 
         let mainLocation: any = shop.locations.find(loc => loc.main === true) ?? {}
 
-        this.chatbox.tell(user.uuid, `Info for shop ${query}\nname: ${shop.name}\nowner: ${shop.owner}\ndesc: ${shop.description}\nlocation: ${formatLocation(mainLocation)}\nsoftware: ${shop.softwareName}\nsoftwareVer: ${shop.softwareVersion}\nlastSeen: ${shop.lastSeen}`);
+        this.chatbox.tell(user.uuid, `Info for shop \`${query}\`\nname: \`${shop.name}\`\nowner: \`${shop.owner}\`\ndesc: \`${shop.description}\`\nlocation: ${formatLocation(mainLocation)}\nsoftware: \`${shop.softwareName}\`\nsoftwareVer: \`${shop.softwareVersion}\`\nlastSeen: \`${shop.lastSeen.toISOString()}\``);
     }
 
     async sendStats(user: User) {
