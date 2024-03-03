@@ -121,7 +121,7 @@ export class ChatboxHandler {
   }
 
   async sendItemSearch(user: User, query: string, page: number | undefined, sell: boolean) {
-    const items = await this.db.searchItems(query);
+    const items = await this.db.searchItems(query); console.log(items)
     const output: string[] = [];
 
     items.forEach((item) => {

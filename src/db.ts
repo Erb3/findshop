@@ -21,11 +21,13 @@ export class DatabaseManager {
   async searchItems(query: string) {
     return this.prisma.item.findMany({
       where: {
-        itemID: {
-          contains: query,
-          mode: "insensitive",
-        },
         OR: [
+	  {
+	    itemID: {
+              contains: query,
+              mode: "insensitive",
+	    }
+          },
           {
             displayName: {
               contains: query,
