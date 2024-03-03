@@ -141,7 +141,7 @@ export class ChatboxHandler {
             output.push({
                 price: kstPrice.value,
                 stock: item.stock,
-                text: `${price} (${item.stock ?? "-"}) \`${item.name}\` at **${item.shop.name}** \`${item.shop.computerID}${item.shop.multiShop ? ";":""}${item.shop.multiShop ?? ""}\` (${formatLocation(
+                text: `${price} (${item.stock ?? "-"}) \`${item.name}\` at **${item.shop.name}** (\`${item.shop.computerID}${item.shop.multiShop ? ";":""}${item.shop.multiShop ?? ""}\`) (${formatLocation(
                     mainLocation as Prisma.LocationCreateInput
                 )})`
             });
