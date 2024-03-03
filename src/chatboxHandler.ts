@@ -203,7 +203,9 @@ export class ChatboxHandler {
         let shop = await this.db.getShop(cid, multishop || undefined);
         if (!shop) return this.chatbox.tell(user.uuid, "Shop not found");
 
-        this.chatbox.tell(user.uuid, `Shop name: ${shop.name}`);
+        let mainLocation: any = shop.locations.find(loc => loc.main === true) ?? {}
+
+        this.chatbox.tell(user.uuid, `Info for shop ${query}\nname: ${shop.name}\nowner: ${shop.owner}\ndesc: ${shop.description}\nlocation: ${formatLocation(mainLocation)}\nsoftware: ${shop.softwareName}\nsoftwareVer: ${shop.softwareVersion}\nlastSeen: ${shop.lastSeen}`);
     }
 
     async sendStats(user: User) {

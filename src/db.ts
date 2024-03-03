@@ -194,7 +194,8 @@ export class DatabaseManager {
             where: {
                 computerID: computerID,
                 multiShop: multiShop
-            }
+            },
+            include: { locations: true }
         })
     }
 
