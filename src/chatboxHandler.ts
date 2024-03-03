@@ -196,6 +196,6 @@ export class ChatboxHandler {
     async sendStats(user: User) {
         let stats = await this.db.getStatistics();
 
-        this.chatbox.tell(user.uuid,`Stats:\nShop count: \`${stats.shopCount}\`Location count: \`${stats.locationCount}\`\nTotal item count: \`${stats.itemCount}\`\nMore stats will be added soon!`);
+        this.chatbox.tell(user.uuid,`Stats:\nShop count: \`${stats.shopCount}\`\nLocation count: \`${stats.locationCount}\`\nTotal item count: \`${stats.itemCount}\`\nMore stats will be added soon!`);
     }
 }
