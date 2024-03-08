@@ -44,13 +44,12 @@ export const websocketMessageSchema = z.object({
             description: z.string().optional()
         }),
         dynamicPrice: z.boolean().default(false),
-        stock: z.number().int().optional(), // this is optional with madeOnDemand!!!!
+        stock: z.number().int().optional(), // this is optional with madeOnDemand or noLimit!
         madeOnDemand: z.boolean().default(false),
         requiresInteraction: z.boolean().default(false),
         shopBuysItem: z.boolean().default(false),
         noLimit: z.boolean().default(false),
     }).refine(d => {
-        console.log(d)
 	let addresslessPrice = !d.prices.every(v => v.address!=undefined);
 	return d.shopBuysItem ? true : !addresslessPrice;
     }, "Address required when shop sells item").refine(d => {
