@@ -34,8 +34,8 @@ export const websocketMessageSchema = z.object({
         prices: z.union([z.array(z.object({
             value: z.number(),
             currency: z.string().toUpperCase(),
-            address: z.string(),
-            requiredMeta: z.string().optional()
+            address: z.string().optional(), // shouldn't be here with shopBuysItem
+            requiredMeta: z.string().optional() // shouldn't be here with shopBuysItem
         })), arrayifyObjectSchema]),
         item: z.object({
             name: z.string(),
@@ -49,8 +49,18 @@ export const websocketMessageSchema = z.object({
         requiresInteraction: z.boolean().default(false),
         shopBuysItem: z.boolean().default(false),
         noLimit: z.boolean().default(false),
-    })), arrayifyObjectSchema]).refine(
-        d => d.length>0 ? (!d.every((v) => {return v.stock == undefined && !v.madeOnDemand})) : true,
-        "Stock is not optional when madeOnDemand is false"
-    )
+    }).refine(d => {
+        console.log(d)
+	let addresslessPrice = !d.prices.every(v => v.address!=undefined);
+	return d.shopBuysItem ? true : !addresslessPrice;
+    }, "Address required when shop sells item").refine(d => {
+        let hasNoAddrOrMeta = d.prices.every(v => !(v.address!=undefined || v.requiredMeta!=undefined));
+        return d.shopBuysItem ? hasNoAddrOrMeta : true;
+    }, "Address and requiredMeta can't be defined when shopBuysItem is true").refine(d => {
+        let hasStock = d.stock != undefined;
+        return d.shopBuysItem ? (d.noLimit || hasStock) : true
+    }, "Buy (shop buys) item must have stock when noLimit is false").refine(d => {
+        let hasStock = d.stock != undefined;
+        return d.shopBuysItem ? true : (d.madeOnDemand || hasStock)
+    }, "Sell (shop sells) item must have stock when madeOnDemand is false")), arrayifyObjectSchema])
 })
