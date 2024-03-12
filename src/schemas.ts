@@ -53,9 +53,6 @@ export const websocketMessageSchema = z.object({
 	let addresslessPrice = !d.prices.every(v => v.address!=undefined);
 	return d.shopBuysItem ? true : !addresslessPrice;
     }, "Address required when shop sells item").refine(d => {
-        let hasNoAddrOrMeta = d.prices.every(v => !(v.address!=undefined || v.requiredMeta!=undefined));
-        return d.shopBuysItem ? hasNoAddrOrMeta : true;
-    }, "Address and requiredMeta can't be defined when shopBuysItem is true").refine(d => {
         let hasStock = d.stock != undefined;
         return d.shopBuysItem ? (d.noLimit || hasStock) : true
     }, "Buy (shop buys) item must have stock when noLimit is false").refine(d => {

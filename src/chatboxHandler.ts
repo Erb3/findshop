@@ -155,7 +155,7 @@ export class ChatboxHandler {
                 return stockB - stockA;
             }
 
-            return a.price - b.price;
+            return sell && (b.price - a.price) || (a.price - b.price);
         });
 
         const content: string[] = output.map((v: any) => v.text);
