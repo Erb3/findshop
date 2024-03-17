@@ -122,8 +122,8 @@ export class ChatboxHandler {
     }
 
     async sendItemSearch(user: User, query: string, page: number | undefined, sell: boolean) {
-	const exact = query.charAt(0) === '=';
-	if (exact) query = query.substring(1);
+        const exact = query.charAt(0) === '=';
+        if (exact) query = query.substring(1);
         
         const items = await this.db.searchItems(query, exact);
         const output: any = [];
