@@ -154,21 +154,13 @@ export class DatabaseManager {
         })
     }
 
-    async searchItems(query: string) {
+    async searchItems(query: string, exact: boolean) {
+	let exactq = [{name: {equals: query}}];
+	let nonexactq = [{name: {contains: query}}, {displayName: {contains: query}}];
+
         return this.prisma.item.findMany({
             where: {
-                OR: [
-                    {
-                        name: {
-                            contains: query,
-                        },
-                    },
-                    {
-                        displayName: {
-                            contains: query,
-                        },
-                    },
-                ],
+                OR: exact ? exactq : nonexactq,
             },
             include: {
                 prices: true,
