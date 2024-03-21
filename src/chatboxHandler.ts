@@ -208,7 +208,12 @@ export class ChatboxHandler {
 
         let mainLocation: any = shop.locations.find(loc => loc.main === true) ?? {}
 
-        this.chatbox.tell(user.uuid, `Info for shop \`${query}\`\nname: \`${shop.name}\`\nowner: \`${shop.owner}\`\ndesc: \`${shop.description}\`\nlocation: ${formatLocation(mainLocation)}\nsoftware: \`${shop.softwareName}\`\nsoftwareVer: \`${shop.softwareVersion}\`\nlastSeen: \`${shop.lastSeen.toISOString()}\``);
+        // TODO: limit length of desc
+        // sorry
+        let mainLocationPos  = mainLocation ? ((mainLocation.x && mainLocation.y && mainLocation.z) ? `${mainLocation.x} ${mainLocation.y} ${mainLocation.z}` : "null") : "null";
+        let mainLocationDim  = mainLocation ? (mainLocation.dimension ?? "null") : "null";
+        let mainLocationDesc = mainLocation ? (mainLocation.description ?? "null") : "null";
+        this.chatbox.tell(user.uuid, `Info for shop \`${query}\`\nname: \`${shop.name}\`\nowner: \`${shop.owner}\`\ndesc: \`${shop.description}\`\nmainLocationPos: \`${mainLocationPos}\`\nmainLocationDim: \`${mainLocationDim}\`\nmainLocationDesc: \`${mainLocationDesc}\`\nfmainLocation: ${formatLocation(mainLocation)}\nsoftware: \`${shop.softwareName}\`\nsoftwareVer: \`${shop.softwareVersion}\`\nlastSeen: \`${shop.lastSeen.toISOString()}\``);
     }
 
     async sendStats(user: User) {
