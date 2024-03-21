@@ -213,7 +213,20 @@ export class ChatboxHandler {
         let mainLocationPos  = mainLocation ? ((mainLocation.x && mainLocation.y && mainLocation.z) ? `${mainLocation.x} ${mainLocation.y} ${mainLocation.z}` : "null") : "null";
         let mainLocationDim  = mainLocation ? (mainLocation.dimension ?? "null") : "null";
         let mainLocationDesc = mainLocation ? (mainLocation.description ?? "null") : "null";
-        this.chatbox.tell(user.uuid, `Info for shop \`${query}\`\nname: \`${shop.name}\`\nowner: \`${shop.owner}\`\ndesc: \`${shop.description}\`\nmainLocationPos: \`${mainLocationPos}\`\nmainLocationDim: \`${mainLocationDim}\`\nmainLocationDesc: \`${mainLocationDesc}\`\nfmainLocation: ${formatLocation(mainLocation)}\nsoftware: \`${shop.softwareName}\`\nsoftwareVer: \`${shop.softwareVersion}\`\nlastSeen: \`${shop.lastSeen.toISOString()}\``);
+
+        let shopInfo: any = [
+            ["name", shop.name],
+            ["owner", shop.owner],
+            ["description", shop.description],
+            ["mainLocationPos", mainLocationPos],
+            ["mainLocationDim", mainLocationDim],
+            ["mainLocationDesc", mainLocationDesc],
+            ["fmainLocation", formatLocation(mainLocation)],
+            ["softwareName", shop.softwareName],
+            ["softwareVersion", shop.softwareVersion],
+            ["lastSeen", shop.lastSeen.toISOString()]
+        ]
+        this.chatbox.tell(user.uuid, shopInfo.reduce((acc: any, v: any) => { return `${acc}\n${v[0]}: \`${v[1] ?? "null"}\``}, "Info for shop \`${query}\`"));
     }
 
     async sendStats(user: User) {
