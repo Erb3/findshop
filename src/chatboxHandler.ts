@@ -1,6 +1,6 @@
 import { Client, User } from "switchchat";
 import { z } from "zod";
-import { formatLocation, paginate } from "./utils";
+import { formatLocation, paginate, sliceArgs } from "./utils";
 import { configSchema } from "./config";
 import { DatabaseManager } from "./db";
 import { FindShopLogger } from "./logger";
@@ -18,7 +18,10 @@ export async function initChatbox(
 
     chatbox.on("command", async (cmd) => {
         if (!config.ALIASES.includes(cmd.command)) return;
-        FindShopLogger.logger.debug(`${cmd.user.name}: ${cmd.args.join(" ")}`);
+        FindShopLogger.logger.debug(`${cmd.user.name}: ${cmd.command} ${cmd.args.join(" ")}`);
+
+        cmd.args = sliceArgs(cmd.args.join(" "));
+        FindShopLogger.logger.debug(cmd.args)
 
         switch (cmd.args[0]) {
             case null:

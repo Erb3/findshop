@@ -73,3 +73,15 @@ export function sanitizeMarkdown(input: string | string[]) {
     if (typeof input === "string") input = [input];
     return input.map((v) => v.replaceAll(regex, ""));
 }
+
+export function sliceArgs(str: string): string[] {
+    const regex = /"([^"]*)"|'([^']*)'|\S+/g;
+    const args: string[] = [];
+    let match;
+
+    while ((match = regex.exec(str)) !== null) {
+        args.push(match[1] || match[2] || match[0]);
+    }
+
+    return args;
+}
