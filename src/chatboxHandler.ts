@@ -147,7 +147,7 @@ export class ChatboxHandler {
             output.push({
                 price: kstPrice.value,
                 stock: item.stock,
-                text: `${price} (${item.stock ?? "-"}) \`${item.name}\` at **${item.shop.name}** (\`${item.shop.computerID}${item.shop.multiShop ? ";":""}${item.shop.multiShop ?? ""}\`) (${formatLocation(
+                text: `${price} (${item.stock ?? "-"}) \`${item.name}\` at **${item.shop.name}** (id=\`${item.shop.computerID}${item.shop.multiShop ? ";":""}${item.shop.multiShop ?? ""}\`) (${formatLocation(
                     mainLocation as Prisma.LocationCreateInput
                 )})`
             });
@@ -171,7 +171,7 @@ export class ChatboxHandler {
             paginate({
                 content: content,
                 page: page || 1,
-                args: (sell ? "sell " : "buy ") + query,
+                args: (sell ? "sell " : "buy ") + ((query.indexOf(" ") === -1 ) && query || `"${query}"`),
             })
         );
     }
@@ -184,7 +184,7 @@ export class ChatboxHandler {
         shops.forEach((shop) => {
             let mainLocation: any = shop.locations.find(loc => loc.main === true) ?? {}
 
-            output.push(`${shop.name} (\`${shop.computerID}${shop.multiShop ? ";":""}${shop.multiShop ?? ""}\`) at ${formatLocation(mainLocation)}`);
+            output.push(`${shop.name} (id=\`${shop.computerID}${shop.multiShop ? ";":""}${shop.multiShop ?? ""}\`) at ${formatLocation(mainLocation)}`);
         });
 
         this.chatbox.tell(
