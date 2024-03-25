@@ -229,7 +229,7 @@ export class ChatboxHandler {
             ["softwareVersion", shop.softwareVersion],
             ["lastSeen", shop.lastSeen.toISOString()]
         ]
-        this.chatbox.tell(user.uuid, shopInfo.reduce((acc: any, v: any) => { return `${acc}\n${v[0]}: \`${v[1] ?? "null"}\``}, "Info for shop \`${query}\`"));
+        this.chatbox.tell(user.uuid, shopInfo.reduce((acc: any, v: any) => { return `${acc}\n${v[0]}: \`${v[1] ?? "null"}\``}, `Info for shop \`${query}\``));
     }
 
     async sendStats(user: User) {
