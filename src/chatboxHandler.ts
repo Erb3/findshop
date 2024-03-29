@@ -125,6 +125,12 @@ export class ChatboxHandler {
     }
 
     async sendItemSearch(user: User, query: string, page: number | undefined, sell: boolean) {
+        if (!query) {
+            return this.chatbox.tell(
+                user.uuid,
+                "Missing query"
+            );
+        }
         const exact = query.charAt(0) === '=';
         if (exact) query = query.substring(1);
         
