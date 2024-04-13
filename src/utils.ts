@@ -3,9 +3,9 @@ import { z as zod } from "zod";
 const urlValidator = zod.string().url();
 
 export enum Dimension {
-    Overworld = 0,
-    Nether = -1,
-    End = 1,
+    overworld = 0,
+    nether = -1,
+    end = 1,
 }
 
 // Formats the location of a shop
