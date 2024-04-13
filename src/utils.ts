@@ -1,13 +1,12 @@
-import { Prisma } from "@prisma/client";
 import { z as zod } from "zod";
 
 const urlValidator = zod.string().url();
 
-export const dimensions: any = {
-    [-1]: "Nether",
-    [0]: "Overworld",
-    [1]: "End",
-};
+export enum Dimension {
+    Overworld = 0,
+    Nether = -1,
+    End = 1,
+}
 
 // Formats the location of a shop
 // Prioritises the description, if it is a URL.
@@ -19,7 +18,13 @@ export function formatLocation({
     z,
     description,
     dimension,
-}: Prisma.LocationCreateInput) {
+}: {
+    x?: number;
+    y?: number;
+    z?: number;
+    description?: string;
+    dimension?: string;
+}) {
     description = description?.trim();
 
     if (urlValidator.safeParse(description).success)
@@ -28,13 +33,9 @@ export function formatLocation({
 
     if (x && y && z) output += `\`${x} ${y} ${z}\``;
     if (description && output === "") output += description;
-
-    let dimStr = dimension ? dimensions[dimension] : null;
-
-    if (dimension && output === "")
-        output += dimStr ? `the ${dimStr}` : `dim ${dimension}`;
-    else if (dimension)
-        output += dimStr ? ` in the ${dimStr}` : `in dim ${dimension}`;
+    else if (description) output += ` (${description}) `;
+    if (dimension && output === "") output += "the " + dimension;
+    else if (dimension) output += `in the ${dimension}`;
     if (output === "") return "Unknown";
 
     return output;
