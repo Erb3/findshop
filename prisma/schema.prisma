@@ -1,55 +1,72 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
 generator client {
-  provider = "prisma-client-js"
+    provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "mongodb"
-  url      = env("DATABASE_URL")
+    provider = "sqlite"
+    url      = env("DATABASE_URL")
 }
 
 model Shop {
-  id              String    @id @default(auto()) @map("_id") @db.ObjectId
-  name            String
-  description     String?
-  owner           String?
-  computerID      Int
-  multiShop       Int?
-  softwareName    String?
-  softwareVersion String?
-  lastSeen        DateTime  @default(now())
-  mainLocation    Location? @relation(fields: [mainLocationID], references: [id])
-  mainLocationID  String?   @unique @db.ObjectId
-  items           Item[]
+    id              String     @id @unique @default(uuid())
+    name            String
+    description     String?
+    owner           String?
+    computerID      Int
+    multiShop       Int?
+    softwareName    String?
+    softwareVersion String?
+    lastSeen        DateTime   @default(now())
+    locations       Location[]
+    items           Item[]
 }
 
 model Location {
-  id          String     @id @default(auto()) @map("_id") @db.ObjectId
-  x           Int?
-  y           Int?
-  z           Int?
-  description String?
-  dimension   Dimension?
-  shop        Shop?
+    id          String  @id @unique @default(uuid())
+    main        Boolean
+    x           Int?
+    y           Int?
+    z           Int?
+    description String?
+    dimension   Int?
+
+    shop   Shop   @relation(fields: [shopID], references: [id], onDelete: Cascade)
+    shopID String
 }
 
 model Item {
-  id                  String  @id @default(auto()) @map("_id") @db.ObjectId
-  itemID              String
-  tstPrice            Float?
-  kstPrice            Float?
-  displayName         String
-  dynamicPrice        Boolean
-  madeOnDemand        Boolean
-  stock               Int?
-  requiresInteraction Boolean
-  isBuyingItem        Boolean
-  noLimit             Boolean
-  shop                Shop    @relation(fields: [shopID], references: [id])
-  shopID              String  @db.ObjectId
+    id String @id @default(uuid())
+
+    name                String
+    displayName         String
+    nbtHash             String?
+    description         String?
+    dynamicPrice        Boolean
+    madeOnDemand        Boolean
+    stock               Int?
+    requiresInteraction Boolean
+    shopBuysItem        Boolean
+    noLimit             Boolean
+
+    prices Price[]
+
+    shop   Shop   @relation(fields: [shopID], references: [id], onDelete: Cascade)
+    shopID String
 }
 
-enum Dimension {
-  overworld
-  nether
-  end
+model Price {
+    id           String  @id @default(uuid())
+    value        Float
+    currency     String
+    address      String?
+    requiredMeta String?
+
+    item   Item   @relation(fields: [itemID], references: [id], onDelete: Cascade)
+    itemID String
 }

@@ -39,3 +39,5 @@ dist/**/*
 # ignore bad package managers
 yarn.lock
 package-lock.json
+
+*.db
