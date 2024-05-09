@@ -3,16 +3,16 @@ import { FindShopLogger } from "./logger";
 
 export const configSchema = z.object({
     CHATBOX_TOKEN: z.string().uuid(),
+    WEBSOCKET_TOKEN: z.string(),
+    DATABASE_URL: z.string(),
     CHATBOX_NAME: z.string().default("&6&lFindShop"),
     ALIASES: z.preprocess(
         (v) => (typeof v === "string" ? v.split(",") : v),
-        z.array(z.string()).default(["fs", "findshop", "fs2"])
+        z.array(z.string()).default(["fs", "findshop"])
     ),
-    RESULTS_PER_AGE: z.number().default(7),
+    RESULTS_PER_PAGE: z.number().default(7),
     GITHUB_LINK: z.string().default("https://github.com/Pixium/findshop"),
     CHAT_WIDTH: z.number().default(49),
-    WEBSOCKET_TOKEN: z.string(),
-    DATABASE_URL: z.string(),
 });
 
 export async function parseConfig() {
