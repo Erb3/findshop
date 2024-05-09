@@ -22,8 +22,9 @@ export async function parseConfig() {
         FindShopLogger.logger.error(
             `Failed to read environment variables. Provided error: ${config.error}`
         );
-        process.exit(1);
-    } else {
-        return config.data;
+
+        throw config.error;
     }
+
+    return config.data;
 }
