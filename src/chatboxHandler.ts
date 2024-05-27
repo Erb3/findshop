@@ -1,10 +1,10 @@
+import { Prisma } from "@prisma/client";
 import { Client, User } from "switchchat";
 import { z } from "zod";
-import { formatLocation, paginate, sliceArgs } from "./utils";
 import { configSchema } from "./config";
 import { DatabaseManager } from "./db";
 import { FindShopLogger } from "./logger";
-import { Prisma } from "@prisma/client";
+import { formatLocation, paginate, sliceArgs } from "./utils";
 
 export async function initChatbox(
     config: z.infer<typeof configSchema>,
@@ -133,7 +133,7 @@ export class ChatboxHandler {
         }
         const exact = query.charAt(0) === '=';
         if (exact) query = query.substring(1);
-        
+
         const items = await this.db.searchItems(query, exact);
         const output: any = [];
 
@@ -209,9 +209,9 @@ export class ChatboxHandler {
         if (id.length > 2) return this.chatbox.tell(user.uuid, "Invalid shop id");
         let cid = parseInt(id[0])
         let multishop = parseInt(id[1])
-        
+
         if (isNaN(cid) || (isNaN(multishop) && id[1])) return this.chatbox.tell(user.uuid, "Invalid shop id");
-        
+
         let shop = await this.db.getShop(cid, multishop || undefined);
         if (!shop) return this.chatbox.tell(user.uuid, "Shop not found");
 

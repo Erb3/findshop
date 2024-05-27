@@ -1,7 +1,7 @@
 import { PrismaClient } from "@prisma/client";
+import { z } from "zod";
 import { FindShopLogger } from "./logger";
 import { websocketMessageSchema } from "./schemas";
-import { z } from "zod";
 
 export class DatabaseManager {
     prisma: PrismaClient;

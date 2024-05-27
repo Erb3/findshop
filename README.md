@@ -81,6 +81,6 @@ Lists all available shops.
 
 ## Contributing
 
-FindShop is developed using the [bun JavaScript toolkit and runtime](https://bun.sh).
+FindShop is developed using the [Bun toolkit and runtime](https://bun.sh).
 
 [ShopSync]: https://p.sc3.io/7Ae4KxgzAM

@@ -1,14 +1,13 @@
-import { FindShopLogger } from "./logger";
-import { connectToDatabase } from "./db";
-import { parseConfig } from "./config";
 import { initChatbox } from "./chatboxHandler";
+import { parseConfig } from "./config";
+import { connectToDatabase } from "./db";
+import { FindShopLogger } from "./logger";
 import { websocketMessageSchema } from "./schemas";
 
 FindShopLogger.logger.info("Starting FindShop backend...");
 const config = await parseConfig();
 const db = await connectToDatabase();
 await initChatbox(config, db);
-
 
 Bun.serve({
     fetch(req, server) {
@@ -25,21 +24,25 @@ Bun.serve({
     },
     websocket: {
         message: async (ws, msg) => {
-            if (msg.length > 1<<20) {
+            if (msg.length > 1 << 20) {
                 FindShopLogger.logger.error("Received too long message");
                 return;
             }
 
-            const tryParse = websocketMessageSchema.safeParse(JSON.parse(msg.toString("utf8")));
+            const tryParse = websocketMessageSchema.safeParse(
+                JSON.parse(msg.toString("utf8"))
+            );
+
             if (!tryParse.success) {
-                FindShopLogger.logger.error(`Failed to parse websocket message: ${tryParse.error}`);
-                FindShopLogger.logger.error(msg)
+                FindShopLogger.logger.error(
+                    `Failed to parse websocket message: ${msg}. Error: ${tryParse.error}`
+                );
                 return;
             }
-            FindShopLogger.logger.debug("Parsed WebSocket message");
 
-            db.handlePacket(tryParse.data)
+            FindShopLogger.logger.debug("Parsed WebSocket message");
+            db.handlePacket(tryParse.data);
         },
     },
-    port: 8080
-})
+    port: 8080,
+});
