@@ -1,0 +1,354 @@
+{
+  "id": "00000000-0000-0000-0000-000000000000",
+  "prevId": "",
+  "version": "6",
+  "dialect": "sqlite",
+  "tables": {
+    "Shop": {
+      "name": "Shop",
+      "columns": {
+        "id": {
+          "autoincrement": false,
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name": {
+          "autoincrement": false,
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "autoincrement": false,
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "owner": {
+          "autoincrement": false,
+          "name": "owner",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "computerID": {
+          "autoincrement": false,
+          "name": "computerID",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "multiShop": {
+          "autoincrement": false,
+          "name": "multiShop",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "softwareName": {
+          "autoincrement": false,
+          "name": "softwareName",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "softwareVersion": {
+          "autoincrement": false,
+          "name": "softwareVersion",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "lastSeen": {
+          "default": "(CURRENT_TIMESTAMP)",
+          "autoincrement": false,
+          "name": "lastSeen",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "compositePrimaryKeys": {},
+      "indexes": {
+        "Shop_id_key": {
+          "name": "Shop_id_key",
+          "columns": [
+            "id"
+          ],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {},
+      "uniqueConstraints": {}
+    },
+    "Location": {
+      "name": "Location",
+      "columns": {
+        "id": {
+          "autoincrement": false,
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "main": {
+          "autoincrement": false,
+          "name": "main",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "x": {
+          "autoincrement": false,
+          "name": "x",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "y": {
+          "autoincrement": false,
+          "name": "y",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "z": {
+          "autoincrement": false,
+          "name": "z",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "description": {
+          "autoincrement": false,
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "dimension": {
+          "autoincrement": false,
+          "name": "dimension",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "shopID": {
+          "autoincrement": false,
+          "name": "shopID",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "compositePrimaryKeys": {},
+      "indexes": {
+        "Location_id_key": {
+          "name": "Location_id_key",
+          "columns": [
+            "id"
+          ],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {
+        "Location_shopID_Shop_id_fk": {
+          "name": "Location_shopID_Shop_id_fk",
+          "tableFrom": "Location",
+          "tableTo": "Shop",
+          "columnsFrom": [
+            "shopID"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "cascade"
+        }
+      },
+      "uniqueConstraints": {}
+    },
+    "Item": {
+      "name": "Item",
+      "columns": {
+        "id": {
+          "autoincrement": false,
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name": {
+          "autoincrement": false,
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "displayName": {
+          "autoincrement": false,
+          "name": "displayName",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "nbtHash": {
+          "autoincrement": false,
+          "name": "nbtHash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "description": {
+          "autoincrement": false,
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "dynamicPrice": {
+          "autoincrement": false,
+          "name": "dynamicPrice",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "madeOnDemand": {
+          "autoincrement": false,
+          "name": "madeOnDemand",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "stock": {
+          "autoincrement": false,
+          "name": "stock",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "requiresInteraction": {
+          "autoincrement": false,
+          "name": "requiresInteraction",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "shopBuysItem": {
+          "autoincrement": false,
+          "name": "shopBuysItem",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "noLimit": {
+          "autoincrement": false,
+          "name": "noLimit",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "shopID": {
+          "autoincrement": false,
+          "name": "shopID",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "compositePrimaryKeys": {},
+      "indexes": {},
+      "foreignKeys": {
+        "Item_shopID_Shop_id_fk": {
+          "name": "Item_shopID_Shop_id_fk",
+          "tableFrom": "Item",
+          "tableTo": "Shop",
+          "columnsFrom": [
+            "shopID"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "cascade"
+        }
+      },
+      "uniqueConstraints": {}
+    },
+    "Price": {
+      "name": "Price",
+      "columns": {
+        "id": {
+          "autoincrement": false,
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "value": {
+          "autoincrement": false,
+          "name": "value",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "currency": {
+          "autoincrement": false,
+          "name": "currency",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "address": {
+          "autoincrement": false,
+          "name": "address",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "requiredMeta": {
+          "autoincrement": false,
+          "name": "requiredMeta",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "itemID": {
+          "autoincrement": false,
+          "name": "itemID",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "compositePrimaryKeys": {},
+      "indexes": {},
+      "foreignKeys": {
+        "Price_itemID_Item_id_fk": {
+          "name": "Price_itemID_Item_id_fk",
+          "tableFrom": "Price",
+          "tableTo": "Item",
+          "columnsFrom": [
+            "itemID"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "cascade"
+        }
+      },
+      "uniqueConstraints": {}
+    }
+  },
+  "enums": {},
+  "_meta": {
+    "schemas": {},
+    "tables": {},
+    "columns": {}
+  }
+}

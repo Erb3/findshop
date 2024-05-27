@@ -1,7 +1,7 @@
 import { Client, User } from "switchchat";
 import { z } from "zod";
 import { configSchema } from "./config";
-import { DatabaseManager } from "./db";
+import { DatabaseManager } from "./drizzle";
 import { FindShopLogger } from "./logger";
 import { formatLocation, paginate, sliceArgs } from "./utils";
 
