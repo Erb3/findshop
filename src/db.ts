@@ -15,7 +15,7 @@ export class DatabaseManager {
     }
 
     async cleanOldShops() {
-        let res = await this.prisma.shop.deleteMany({
+        const deleted = await this.prisma.shop.deleteMany({
             where: {
                 lastSeen: {
                     lt: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000)
@@ -23,7 +23,7 @@ export class DatabaseManager {
             }
         })
 
-        FindShopLogger.logger.info(`Deleted ${res.count} old shop(s)`);
+        FindShopLogger.logger.info(`Deleted ${deleted.count} old shop(s)`);
     }
 
     async handlePacket(shopsyncPacket: z.infer<typeof websocketMessageSchema>) {
@@ -155,8 +155,8 @@ export class DatabaseManager {
     }
 
     async searchItems(query: string, exact: boolean) {
-	    let exactq = [{name: {equals: query}}, {displayName: {equals: query}}];
-	    let nonexactq = [{name: {contains: query}}, {displayName: {contains: query}}];
+	    const exactq = [{name: {equals: query}}, {displayName: {equals: query}}];
+	    const nonexactq = [{name: {contains: query}}, {displayName: {contains: query}}];
 
         return this.prisma.item.findMany({
             where: {

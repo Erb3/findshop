@@ -10,6 +10,7 @@ test("Format location", () => {
     expect(formatLocation({ description: "https://example.com" })).toBe(
         "`https://example.com`"
     );
+
     expect(
         formatLocation({
             description: "https://example.com",
@@ -19,9 +20,11 @@ test("Format location", () => {
             z: 3,
         })
     ).toBe("`https://example.com`");
+
     expect(formatLocation({ description: "the back of CatMall" })).toBe(
         "the back of CatMall"
     );
+
     expect(formatLocation({ description: " the back of CatMall " })).toBe(
         "the back of CatMall"
     );

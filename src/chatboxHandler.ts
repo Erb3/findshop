@@ -1,4 +1,3 @@
-import { Prisma } from "@prisma/client";
 import { Client, User } from "switchchat";
 import { z } from "zod";
 import { configSchema } from "./config";
@@ -140,28 +139,24 @@ export class ChatboxHandler {
         items.forEach((item) => {
             if (item.shopBuysItem && !sell) return; // were looking for shops selling items, shop is buying
             if (!item.shopBuysItem && sell) return; // were looking for shops buying items, shop is selling
-
-            let prices = item.prices.reduce((acc: any, price) => { acc[price.currency] = price; return acc }, {})
-            let kstPrice = prices["KST"]
-
+            const prices = item.prices.reduce((acc: any, price) => { acc[price.currency] = price; return acc }, {})
+            const kstPrice = prices["KST"]
             if (!kstPrice) return; // other currencies wip
-
-            let mainLocation = item.shop.locations.find(loc => loc.main === true) ?? {}
-
+            const mainLocation = item.shop.locations.find(loc => loc.main === true) ?? {}
             const price = `k${kstPrice.value}`;
 
             output.push({
                 price: kstPrice.value,
                 stock: item.stock,
                 text: `${price} (${item.stock ?? "-"}) \`${item.name}\` at **${item.shop.name}** (id=\`${item.shop.computerID}${item.shop.multiShop ? ";":""}${item.shop.multiShop ?? ""}\`) (${formatLocation(
-                    mainLocation as Prisma.LocationCreateInput
+                    mainLocation
                 )})`
             });
         });
 
         output.sort((a: any, b: any) => {
-            let stockA = a.stock === 0 ? 0 : 1;
-            let stockB = b.stock === 0 ? 0 : 1;
+            const stockA = a.stock === 0 ? 0 : 1;
+            const stockB = b.stock === 0 ? 0 : 1;
 
             if (stockA !== stockB) {
                 return stockB - stockA;
@@ -188,7 +183,7 @@ export class ChatboxHandler {
         const output: string[] = [];
 
         shops.forEach((shop) => {
-            let mainLocation: any = shop.locations.find(loc => loc.main === true) ?? {}
+            const mainLocation: any = shop.locations.find(loc => loc.main === true) ?? {}
 
             output.push(`${shop.name} (id=\`${shop.computerID}${shop.multiShop ? ";":""}${shop.multiShop ?? ""}\`) at ${formatLocation(mainLocation)}`);
         });
@@ -205,25 +200,25 @@ export class ChatboxHandler {
 
     async getShopInfo(user: User, query: string) {
         if (!query) return this.chatbox.tell(user.uuid, "Shop not found");
-        let id = query.split(";")
+        const id = query.split(";")
         if (id.length > 2) return this.chatbox.tell(user.uuid, "Invalid shop id");
-        let cid = parseInt(id[0])
-        let multishop = parseInt(id[1])
+        const cid = parseInt(id[0])
+        const multishop = parseInt(id[1])
 
         if (isNaN(cid) || (isNaN(multishop) && id[1])) return this.chatbox.tell(user.uuid, "Invalid shop id");
 
-        let shop = await this.db.getShop(cid, multishop || undefined);
+        const shop = await this.db.getShop(cid, multishop || undefined);
         if (!shop) return this.chatbox.tell(user.uuid, "Shop not found");
 
-        let mainLocation: any = shop.locations.find(loc => loc.main === true) ?? {}
+        const mainLocation: any = shop.locations.find(loc => loc.main === true) ?? {}
 
         // TODO: limit length of desc
         // sorry
-        let mainLocationPos  = mainLocation ? ((mainLocation.x && mainLocation.y && mainLocation.z) ? `${mainLocation.x} ${mainLocation.y} ${mainLocation.z}` : "null") : "null";
-        let mainLocationDim  = mainLocation ? (mainLocation.dimension ?? "null") : "null";
-        let mainLocationDesc = mainLocation ? (mainLocation.description ?? "null") : "null";
+        const mainLocationPos  = mainLocation ? ((mainLocation.x && mainLocation.y && mainLocation.z) ? `${mainLocation.x} ${mainLocation.y} ${mainLocation.z}` : "null") : "null";
+        const mainLocationDim  = mainLocation ? (mainLocation.dimension ?? "null") : "null";
+        const mainLocationDesc = mainLocation ? (mainLocation.description ?? "null") : "null";
 
-        let shopInfo: any = [
+        const shopInfo: any = [
             ["name", shop.name],
             ["owner", shop.owner],
             ["description", shop.description],
@@ -239,7 +234,7 @@ export class ChatboxHandler {
     }
 
     async sendStats(user: User) {
-        let stats = await this.db.getStatistics();
+        const stats = await this.db.getStatistics();
 
         this.chatbox.tell(user.uuid, `Stats:\nShop count: \`${stats.shopCount}\`\nLocation count: \`${stats.locationCount}\`\nTotal item count: \`${stats.itemCount}\`\nMore stats will be added soon!`);
     }
