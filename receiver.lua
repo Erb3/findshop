@@ -1,88 +1,86 @@
-settings.define("findshop.wstoken", {
-  type = "string",
-  default = ""
+settings.define("findshop.token", {
+    type = "string",
+    description = "The secret token to communicate with the server with"
 })
 
-settings.define("findshop.wsserver", {
-  type = "string",
-  default = ""
+settings.define("findshop.server", {
+    type = "string",
+    description = "The findshop backend server"
 })
 
-settings.define("findshop.port", {
-  type = "number",
-  default = 9773
+settings.define("findshop.channel", {
+    type = "number",
+    default = 9773,
+    description = "Findshop backend server port"
 })
--- This seems not different
--- scroll down
-settings.save()
 
-local WSSERVER = settings.get("findshop.wsserver") or ""
-local TOKEN = settings.get("findshop.wstoken") or ""
-local PORT = settings.get("findshop.port") or 9773
+local WSSERVER = settings.get("findshop.server")
+local TOKEN = settings.get("findshop.token")
+local FINDSHOP_CHANNEL = settings.get("findshop.channel")
 
+assert(WSSERVER, "WS server URL must be specified with `findshop.server`")
+assert(TOKEN, "WS server token must be specified with `findshop.token`")
 
-if #WSSERVER == 0 then
-  error("WS server URL must be specified at findshop.wsserver")
-end
+local modems = { peripheral.find("modem") }
+local modem
+assert(#modems ~= 0, "No modems to listen with found")
 
-if #TOKEN == 0 then
-  error("Token must be specified at findshop.wstoken")
-end
-
-local modem = peripheral.find("modem") or error("Modem not found")
-
-if not modem.isWireless() then
-  printError("Modem is not wireless, this could be an issue, continuing")
-end
-
-modem.open(PORT)
-
-local function receive()
-  while true do
-    local event, side, channel, replyChannel, msg, distance = os.pullEvent("modem_message")
-
-    if channel == PORT then
-      if type(msg) == "table" and type(msg.info) == "table" then
-        msg.info.computerID = msg.info.computerID or replyChannel
-      end
-
-      local s, res = pcall(textutils.serializeJSON, msg)
-      return s, res
+for _, p in ipairs(modems) do
+    ---@diagnostic disable-next-line: undefined-field
+    if p.isWireless() then
+        modem = p
     end
-  end
+end
+
+assert(modem, "No wireless modem found!")
+modem.open(FINDSHOP_CHANNEL)
+print("Opened findshop channel on modem " .. peripheral.getName(modem))
+
+local function wait_for_packet()
+    while true do
+        local event, side, channel, replyChannel, msg, distance = os.pullEvent("modem_message")
+
+        if channel == FINDSHOP_CHANNEL and side == peripheral.getName(modem) then
+            if type(msg) == "table" and type(msg.info) == "table" then
+                msg.info.computerID = msg.info.computerID or replyChannel
+            end
+
+            local s, res = pcall(textutils.serializeJSON, msg)
+            return s, res
+        end
+    end
 end
 
 while true do
-  local s,e = pcall(function()
-    local ws, err = http.websocket({
-      url = WSSERVER,
-      headers = { ["Authorization"] = TOKEN },
-      timeout = 5
-    })
+    local s, e = pcall(function()
+        print("Attempting to connect to WebSocket")
+        local ws, err = http.websocket({
+            url = WSSERVER,
+            headers = { ["Authorization"] = TOKEN },
+            timeout = 5
+        })
 
-    if not ws then
-      error("Failed to connect to WS: " .. err)
-    else
-      print("Connected to WS")
-    end
+        assert(ws, "Failed to connect to WebSocket due to " .. err)
+        print("Successfully connected to WebSocket")
 
-    while true do
-      local ok, msg = receive()
+        while true do
+            local ok, msg = wait_for_packet()
 
-      if ok then
-        print("Sending msg")
-        if ws then
-          print(#msg)
-          ws.send(msg)
-        else
-          error("WS closed")
+            if ok then
+                print("Sending websocket message")
+
+                if ws then
+                    ws.send(msg)
+                else
+                    error("WS closed")
+                end
+            else
+                print("Received bad data from shop")
+            end
         end
-      else
-        print("Received bad data from shop")
-      end
-    end
-  end)
+    end)
 
-  if not s then printError(e) end
-  sleep(2)
+    if not s then printError(e) end
+    print("Attempting to connect again in 5 seconds")
+    sleep(5)
 end
