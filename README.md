@@ -79,6 +79,10 @@ Returns some statistics.
 
 Lists all available shops.
 
+## Deployment
+
+You must use a reverse-proxy like [NginX](https://nginx.org/) or [Casket](https://docs.casketserver.com/) to rate-limit, log and protect the API. The IP of the user must be set to the `X-Forwarded-For` header. The proxy must not accept any pre-existing value in the header, and should always overwrite it.
+
 ## Contributing
 
 FindShop is developed using the [Bun toolkit and runtime](https://bun.sh).
