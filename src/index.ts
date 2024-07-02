@@ -46,14 +46,14 @@ Bun.serve({
         } else if (pathname.match("^/api/v1/shop/([^/]+)$")) {
             const match = pathname.match("^/api/v1/shop/([^/]+)$")![1];
             const [shopIdStr, multishopStr] = match.split(":");
-            if (!shopIdStr) return new Response("Bad Request1", { status: 400 });
+            if (!shopIdStr) return new Response("Bad Request", { status: 400 });
 
             console.log(shopIdStr)
             const shopId = parseInt(shopIdStr);
-            if (isNaN(shopId)) return new Response("Bad Request2", { status: 400 });
+            if (isNaN(shopId)) return new Response("Bad Request", { status: 400 });
 
             const multiShop = parseInt(multishopStr);
-            if (isNaN(multiShop) && multishopStr) return new Response("Bad Request3", { status: 400 });
+            if (isNaN(multiShop) && multishopStr) return new Response("Bad Request", { status: 400 });
 
             const shop = await db.getShop(shopId, multishopStr ? multiShop : undefined, searchParams.get("includeItems") === "true");
             if (shop) {
