@@ -70,7 +70,21 @@ Bun.serve({
             const includeFullShop = searchParams.get("includeFullShop") === "true";
 
             const items = await db.searchItems(query, exactMatch, inStock, sell, includeFullShop);
-            return new Response(JSON.stringify(items), { headers: { "Content-Type": "application/json" } });
+
+            const filteredShops: any = {};
+
+            if (!includeFullShop) {
+                const shops = await db.getAllShops();
+
+                for (const item of items) {
+                    let shopID = item.shopID
+
+                    const shop = shops.find(s => s.id === shopID);
+                    if (shop) filteredShops[shopID] = shop;
+                }
+            }
+
+            return new Response(JSON.stringify({items: items, shops: includeFullShop ? undefined : filteredShops}), { headers: { "Content-Type": "application/json" } });
         }
 
         return new Response("Not Found", { status: 404 });
