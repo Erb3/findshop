@@ -67,8 +67,9 @@ Bun.serve({
             const exactMatch = searchParams.get("exact") === "true";
             const inStock = searchParams.get("inStock") === "true";
             const sell = searchParams.get("sell") === "true";
+            const includeFullShop = searchParams.get("includeFullShop") === "true";
 
-            const items = await db.searchItems(query, exactMatch, inStock, sell);
+            const items = await db.searchItems(query, exactMatch, inStock, sell, includeFullShop);
             return new Response(JSON.stringify(items), { headers: { "Content-Type": "application/json" } });
         }
 

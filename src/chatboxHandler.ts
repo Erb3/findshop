@@ -133,7 +133,7 @@ export class ChatboxHandler {
         const exact = query.charAt(0) === '=';
         if (exact) query = query.substring(1);
 
-        const items = await this.db.searchItems(query, exact, false, undefined);
+        const items = await this.db.searchItems(query, exact, false, undefined, true);
         const output: any = [];
 
         items.forEach((item) => {
@@ -142,6 +142,7 @@ export class ChatboxHandler {
             const prices = item.prices.reduce((acc: any, price) => { acc[price.currency] = price; return acc }, {})
             const kstPrice = prices["KST"]
             if (!kstPrice) return; // other currencies wip
+            // @ts-ignore
             const mainLocation = item.shop.locations.find(loc => loc.main === true) ?? {}
             const price = `k${kstPrice.value}`;
 

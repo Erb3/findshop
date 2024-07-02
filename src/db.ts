@@ -154,7 +154,7 @@ export class DatabaseManager {
         })
     }
 
-    async searchItems(query: string, exact: boolean, inStock: boolean, sell: boolean | undefined) {
+    async searchItems(query: string, exact: boolean, inStock: boolean, sell: boolean | undefined, includeFullShop: boolean | undefined) {
 	    const exactq = [{name: {equals: query}}, {displayName: {equals: query}}];
 	    const nonexactq = [{name: {contains: query}}, {displayName: {contains: query}}];
 
@@ -166,12 +166,12 @@ export class DatabaseManager {
             },
             include: {
                 prices: true,
-                shop: {
+                shop: includeFullShop ? {
                     include: {
                         locations: true
                     }
-                }
-            }
+                } : undefined
+            },
         });
     }
 
