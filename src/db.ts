@@ -154,13 +154,15 @@ export class DatabaseManager {
         })
     }
 
-    async searchItems(query: string, exact: boolean) {
+    async searchItems(query: string, exact: boolean, inStock: boolean, sell: boolean | undefined) {
 	    const exactq = [{name: {equals: query}}, {displayName: {equals: query}}];
 	    const nonexactq = [{name: {contains: query}}, {displayName: {contains: query}}];
 
         return this.prisma.item.findMany({
             where: {
                 OR: exact ? exactq : nonexactq,
+                stock: inStock ? {gt: 0} : undefined,
+                shopBuysItem: sell
             },
             include: {
                 prices: true,
@@ -181,13 +183,13 @@ export class DatabaseManager {
         });
     }
 
-    async getShop(computerID: number, multiShop: number | undefined) {
+    async getShop(computerID: number, multiShop: number | undefined, includeItems: boolean | undefined) {
         return this.prisma.shop.findFirst({
             where: {
                 computerID: computerID,
                 multiShop: multiShop
             },
-            include: { locations: true }
+            include: { locations: true, items: includeItems ?? false }
         })
     }
 

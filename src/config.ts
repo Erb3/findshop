@@ -11,7 +11,7 @@ export const configSchema = z.object({
         z.array(z.string()).default(["fs", "findshop"])
     ),
     RESULTS_PER_PAGE: z.number().default(7),
-    GITHUB_LINK: z.string().default("https://github.com/Pixium/findshop"),
+    GITHUB_LINK: z.string().default("https://github.com/Erb3/findshop"),
     CHAT_WIDTH: z.number().default(49),
 });
 

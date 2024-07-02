@@ -133,7 +133,7 @@ export class ChatboxHandler {
         const exact = query.charAt(0) === '=';
         if (exact) query = query.substring(1);
 
-        const items = await this.db.searchItems(query, exact);
+        const items = await this.db.searchItems(query, exact, false, undefined);
         const output: any = [];
 
         items.forEach((item) => {
@@ -200,14 +200,14 @@ export class ChatboxHandler {
 
     async getShopInfo(user: User, query: string) {
         if (!query) return this.chatbox.tell(user.uuid, "Shop not found");
-        const id = query.split(";")
+        const id = query.split(":")
         if (id.length > 2) return this.chatbox.tell(user.uuid, "Invalid shop id");
         const cid = parseInt(id[0])
         const multishop = parseInt(id[1])
 
         if (isNaN(cid) || (isNaN(multishop) && id[1])) return this.chatbox.tell(user.uuid, "Invalid shop id");
 
-        const shop = await this.db.getShop(cid, multishop || undefined);
+        const shop = await this.db.getShop(cid, multishop || undefined, false);
         if (!shop) return this.chatbox.tell(user.uuid, "Shop not found");
 
         const mainLocation: any = shop.locations.find(loc => loc.main === true) ?? {}
