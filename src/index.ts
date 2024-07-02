@@ -57,7 +57,7 @@ Bun.serve({
 
             const shop = await db.getShop(shopId, multishopStr ? multiShop : undefined, searchParams.get("includeItems") === "true");
             if (shop) {
-                return new Response(JSON.stringify(shop));
+                return new Response(JSON.stringify(shop), { headers: { "Content-Type": "application/json" } });
             }
 
             return new Response("Not Found", { status: 404 });
@@ -69,7 +69,7 @@ Bun.serve({
             const sell = searchParams.get("sell") === "true";
 
             const items = await db.searchItems(query, exactMatch, inStock, sell);
-            return new Response(JSON.stringify(items));
+            return new Response(JSON.stringify(items), { headers: { "Content-Type": "application/json" } });
         }
 
         return new Response("Not Found", { status: 404 });
