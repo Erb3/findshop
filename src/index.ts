@@ -96,7 +96,8 @@ Bun.serve({
             db.handlePacket(tryParse.data);
         },
     },
-    port: 8080,
+    hostname: config.LISTEN_HOSTNAME,
+    port: config.LISTEN_PORT
 });
 
-FindShopLogger.logger.info("Server running on http://0.0.0.0:8080");
+FindShopLogger.logger.info(`Server running on http://${config.LISTEN_HOSTNAME}:${config.LISTEN_PORT}`);
