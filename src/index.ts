@@ -91,7 +91,7 @@ Bun.serve({
     },
     websocket: {
         message: async (ws, msg) => {
-            if (msg.length > (2^20-1)) {
+            if (msg.length > (2**20-1)) {
                 FindShopLogger.logger.error("Received too long message");
                 return;
             }
