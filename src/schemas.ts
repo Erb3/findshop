@@ -51,8 +51,8 @@ export const websocketMessageSchema = z.object({
                             z.object({
                                 value: z.number(),
                                 currency: z.string().toUpperCase(),
-                                address: z.string().optional(), // shouldn't be here with shopBuysItem
-                                requiredMeta: z.string().optional(), // shouldn't be here with shopBuysItem
+                                address: z.string().optional(),
+                                requiredMeta: z.string().optional(),
                             })
                         ),
                         arrayifyObjectSchema,
@@ -64,7 +64,7 @@ export const websocketMessageSchema = z.object({
                         description: z.string().optional(),
                     }),
                     dynamicPrice: z.boolean().default(false),
-                    stock: z.number().int().optional(), // this is optional with madeOnDemand or noLimit!
+                    stock: z.number().int().optional(),
                     madeOnDemand: z.boolean().default(false),
                     requiresInteraction: z.boolean().default(false),
                     shopBuysItem: z.boolean().default(false),

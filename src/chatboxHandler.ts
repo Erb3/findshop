@@ -22,7 +22,6 @@ export async function initChatbox(
         );
 
         cmd.args = sliceArgs(cmd.args.join(" "));
-        FindShopLogger.logger.debug(cmd.args);
 
         switch (cmd.args[0]) {
             case null:
@@ -40,7 +39,6 @@ export async function initChatbox(
             case "ls": {
                 await chatboxHandler.sendShopList(
                     cmd.user,
-                    cmd.args,
                     parseInt(cmd.args[1])
                 );
                 break;
@@ -202,7 +200,7 @@ export class ChatboxHandler {
         );
     }
 
-    async sendShopList(user: User, args: string[], page: number) {
+    async sendShopList(user: User, page: number) {
         const shops = await this.db.getAllShops();
         const output: string[] = [];
 
