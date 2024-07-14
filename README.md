@@ -1,26 +1,40 @@
 # FindShop
 
-FindShop is a SwitchCraft service providing an easy way to search for compatible shops implementing the [ShopSync] protocol.
-Valid command aliases are `\fs`, `\find` or `\findshop`.
+<h1 align="center"> Kristsplit </h1>
+<p align="center">Simple applicaiton to <strong>redirect your <a href="https://krist.dev">krist</a></strong>!</p>
+
+<p align="center">
+  <img alt="image of docker status" src="https://img.shields.io/github/actions/workflow/status/Erb3/kristsplit/docker-image.yml?style=flat-square&logo=docker&label=Docker%20image">
+  <img alt="image of ci status" src="https://img.shields.io/github/actions/workflow/status/Erb3/kristsplit/ci.yml?style=flat-square&logo=jest&label=Tests">
+</p>
+
+FindShop is a SwitchCraft service providing an easy way to search for compatible
+shops implementing the [ShopSync] protocol. Valid command aliases are `\fs` or `\findshop`.
 
 ## FAQ
 
 ### Why are shops or items missing?
 
-There are a few reasons why your search results may not be what you expected, such as the following.
+There are a few reasons why your search results may not be what you expected,
+such as the following.
 
 #### The search term may be too specific or misspelled
 
-FindShop matches results based on exact matches to an item name (display name and item id). So, for example, if you were searching for slime blocks (`minecraft:slime_block`):
+FindShop matches results based on exact matches to an item name (display name
+and item id). So, for example, if you were searching for slime blocks
+(`minecraft:slime_block`):
 
-- `slime` would be matched to both the display name ("**Slime** Block") and the item ID (minecraft:**slime**\_block)
+- `slime` would be matched to both the display name ("**Slime** Block") and the
+  item ID (minecraft:**slime**\_block)
 - `slime_block` would be matched to the item ID (minecraft:**slime_block**)
-- `slimeblock` would return **NOTHING** because the display name has a space in between "slime" and "block" and the item ID replaces this space with an underscore.
+  between "slime" and "block" and the item ID replaces this space with an
+- `slimeblock` would return **NOTHING** because the display name has a space in
+  underscore.
 
 #### FindShop doesn't have the shop
 
-FindShop fetches shop information, including location, pricing & stock, from shops implementing the [ShopSync] standard.
-Shops might not appear if:
+FindShop fetches shop information, including location, pricing & stock, from
+shops implementing the [ShopSync] standard. Shops might not appear if:
 
 - their software doesn't support ShopSync
 - their software implemented ShopSync incorrectly
@@ -45,7 +59,9 @@ Shops might not appear if:
 \fs buy <item>
 ```
 
-Finds shops with `<item>` and returns the shop name, location, item price & quantity in stock. The buy keyword is optional: if no subcommand is specified, buy is inferred.
+Finds shops with `<item>` and returns the shop name, location, item price &
+quantity in stock. The buy keyword is optional: if no subcommand is specified,
+buy is inferred.
 
 ### Sell
 
@@ -61,7 +77,9 @@ Finds shops buying `<item>` and returns the shop name, location and item price.
 \fs shop <name> [page]
 ```
 
-Finds shops with `<name>` and returns the owner, location, and other statistics. If multiple results are found, a list of results with page numbers will be shown.
+Finds shops with `<name>` and returns the owner, location, and other statistics.
+If multiple results are found, a list of results with page numbers will be
+shown.
 
 ### Stats
 
@@ -81,7 +99,10 @@ Lists all available shops.
 
 ## Deployment
 
-You must use a reverse-proxy like [NginX](https://nginx.org/) or [Casket](https://docs.casketserver.com/) to rate-limit, log and protect the API. The IP of the user must be set to the `X-Forwarded-For` header. The proxy must not accept any pre-existing value in the header, and should always overwrite it.
+You must use a reverse-proxy like [NginX](https://nginx.org/) or
+[Casket](https://docs.casketserver.com/) to rate-limit, log and protect the API.
+The IP of the user must be set to the `X-Forwarded-For` header. The proxy must
+not accept any pre-existing value in the header, and should always overwrite it.
 
 ## Contributing
 

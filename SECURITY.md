@@ -11,7 +11,7 @@ We only support updates for the latest version.
 
 ## Reporting a Vulnerability
 
-To report a security vulnerability, please do **not** create a GitHub issue, but report a [security vulnerability on GitHub Security instead!](https://github.com/Pixium/FindShop/security/advisories).
+To report a security vulnerability, please do **not** create a GitHub issue, but report a [security vulnerability on GitHub Security instead!](https://github.com/Erb3/FindShop/security/advisories).
 This lets the maintainers get aware of the vulnerability, and talk with the security researcher in private.
 
 > [!IMPORTANT]
