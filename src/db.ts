@@ -197,7 +197,8 @@ export class DatabaseManager {
         return {
             shopCount: await this.prisma.shop.count(),
             itemCount: await this.prisma.item.count(),
-            locationCount: await this.prisma.location.count()
+            locationCount: await this.prisma.location.count(),
+            lastInfoUpdate: (await this.prisma.shop.findFirst({orderBy: { lastSeen: "desc" }}))?.lastSeen
         }
     }
 }

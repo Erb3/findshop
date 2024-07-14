@@ -237,6 +237,12 @@ export class ChatboxHandler {
     async sendStats(user: User) {
         const stats = await this.db.getStatistics();
 
-        this.chatbox.tell(user.uuid, `Stats:\nShop count: \`${stats.shopCount}\`\nLocation count: \`${stats.locationCount}\`\nTotal item count: \`${stats.itemCount}\`\nMore stats will be added soon!`);
+        const statsArray: any = [
+            ["shopCount", stats.shopCount],
+            ["locationCount", stats.locationCount],
+            ["itemCount", stats.itemCount],
+            ["lastShopSyncUpdate", stats.lastInfoUpdate?.toISOString()]
+        ]
+        this.chatbox.tell(user.uuid, statsArray.reduce((acc: any, v: any) => { return `${acc}\n${v[0]}: \`${v[1] ?? "null"}\``}, "FS stats"));
     }
 }
