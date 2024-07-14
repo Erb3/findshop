@@ -10,7 +10,13 @@ export const configSchema = z.object({
     CHATBOX_NAME: z.string().default("&6&lFindShop"),
     ALIASES: z.preprocess(
         (v) => (typeof v === "string" ? v.split(",") : v),
-        z.array(z.string()).default(["fs", "findshop"])
+        z
+            .array(z.string())
+            .default(() =>
+                Bun.env.NODE_ENV == "production"
+                    ? ["fs", "findshop"]
+                    : ["fsdev"]
+            )
     ),
     RESULTS_PER_PAGE: z.number().default(7),
     GITHUB_LINK: z.string().default("https://github.com/Erb3/findshop"),
