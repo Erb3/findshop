@@ -1,7 +1,37 @@
-import { PrismaClient } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
 import { z } from "zod";
 import { FindShopLogger } from "./logger";
 import { websocketMessageSchema } from "./schemas";
+
+interface Statistic<T> {
+    codeName: string;
+    friendlyName: string;
+    value: T;
+}
+
+export interface Statistics {
+    shopCount: Statistic<number>;
+    itemCount: Statistic<number>;
+    locationCount: Statistic<number>;
+    lastInfoUpdate: Statistic<Date | null>;
+}
+
+type SearchItemsReturnType<T extends boolean> = T extends true
+    ? Prisma.ItemGetPayload<{
+          include: {
+              prices: true;
+              shop: {
+                  include: {
+                      locations: true;
+                  };
+              };
+          };
+      }>[]
+    : Prisma.ItemGetPayload<{
+          include: {
+              prices: true;
+          };
+      }>[];
 
 export class DatabaseManager {
     prisma: PrismaClient;
@@ -11,17 +41,17 @@ export class DatabaseManager {
 
         setInterval(async () => {
             await this.cleanOldShops();
-        }, 60000 * 15)
+        }, 60000 * 15);
     }
 
     async cleanOldShops() {
         const deleted = await this.prisma.shop.deleteMany({
             where: {
                 lastSeen: {
-                    lt: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000)
-                }
-            }
-        })
+                    lt: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000),
+                },
+            },
+        });
 
         FindShopLogger.logger.info(`Deleted ${deleted.count} old shop(s)`);
     }
@@ -49,21 +79,28 @@ export class DatabaseManager {
                 softwareName: shopsyncPacket.info.software?.name,
                 softwareVersion: shopsyncPacket.info.software?.version,
                 locations: {
-                    create: [{
-                        main: true,
-                        x: shopsyncPacket.info.location?.coordinates?.[0],
-                        y: shopsyncPacket.info.location?.coordinates?.[1],
-                        z: shopsyncPacket.info.location?.coordinates?.[2],
-                        description: shopsyncPacket.info.location?.description,
-                        dimension: shopsyncPacket.info.location?.dimension
-                    }].concat((shopsyncPacket.info.otherLocations ?? []).map((loc: any) => ({
-                        main: false,
-                        x: loc.position?.[0],
-                        y: loc.position?.[1],
-                        z: loc.position?.[2],
-                        description: loc.description,
-                        dimension: loc.dimension,
-                    })))
+                    create: [
+                        {
+                            main: true,
+                            x: shopsyncPacket.info.location?.coordinates?.[0],
+                            y: shopsyncPacket.info.location?.coordinates?.[1],
+                            z: shopsyncPacket.info.location?.coordinates?.[2],
+                            description:
+                                shopsyncPacket.info.location?.description,
+                            dimension: shopsyncPacket.info.location?.dimension,
+                        },
+                    ].concat(
+                        (shopsyncPacket.info.otherLocations ?? []).map(
+                            (loc: any) => ({
+                                main: false,
+                                x: loc.position?.[0],
+                                y: loc.position?.[1],
+                                z: loc.position?.[2],
+                                description: loc.description,
+                                dimension: loc.dimension,
+                            })
+                        )
+                    ),
                 },
                 items: {
                     // @ts-ignore
@@ -84,19 +121,22 @@ export class DatabaseManager {
                                 value: price.value,
                                 currency: price.currency,
                                 address: price.address,
-                                requiredMeta: price.requiredMeta
-                            }))
-                        }
-                    }))
-                }
-            }
-        })
+                                requiredMeta: price.requiredMeta,
+                            })),
+                        },
+                    })),
+                },
+            },
+        });
     }
 
-    async modifyShop(id: string, shopsyncPacket: z.infer<typeof websocketMessageSchema>) {
+    async modifyShop(
+        id: string,
+        shopsyncPacket: z.infer<typeof websocketMessageSchema>
+    ) {
         await this.prisma.shop.update({
             where: {
-                id: id
+                id: id,
             },
             data: {
                 lastSeen: new Date(),
@@ -109,21 +149,28 @@ export class DatabaseManager {
                 softwareVersion: shopsyncPacket.info.software?.version,
                 locations: {
                     deleteMany: {},
-                    create: [{
-                        main: true,
-                        x: shopsyncPacket.info.location?.coordinates?.[0],
-                        y: shopsyncPacket.info.location?.coordinates?.[1],
-                        z: shopsyncPacket.info.location?.coordinates?.[2],
-                        description: shopsyncPacket.info.location?.description,
-                        dimension: shopsyncPacket.info.location?.dimension
-                    }].concat((shopsyncPacket.info.otherLocations ?? []).map((loc: any) => ({
-                        main: false,
-                        x: loc.position?.[0],
-                        y: loc.position?.[1],
-                        z: loc.position?.[2],
-                        description: loc.description,
-                        dimension: loc.dimension,
-                    })))
+                    create: [
+                        {
+                            main: true,
+                            x: shopsyncPacket.info.location?.coordinates?.[0],
+                            y: shopsyncPacket.info.location?.coordinates?.[1],
+                            z: shopsyncPacket.info.location?.coordinates?.[2],
+                            description:
+                                shopsyncPacket.info.location?.description,
+                            dimension: shopsyncPacket.info.location?.dimension,
+                        },
+                    ].concat(
+                        (shopsyncPacket.info.otherLocations ?? []).map(
+                            (loc: any) => ({
+                                main: false,
+                                x: loc.position?.[0],
+                                y: loc.position?.[1],
+                                z: loc.position?.[2],
+                                description: loc.description,
+                                dimension: loc.dimension,
+                            })
+                        )
+                    ),
                 },
                 items: {
                     deleteMany: {},
@@ -145,32 +192,44 @@ export class DatabaseManager {
                                 value: price.value,
                                 currency: price.currency,
                                 address: price.address,
-                                requiredMeta: price.requiredMeta
-                            }))
-                        }
-                    }))
-                }
-            }
-        })
+                                requiredMeta: price.requiredMeta,
+                            })),
+                        },
+                    })),
+                },
+            },
+        });
     }
 
-    async searchItems(query: string, exact: boolean, inStock: boolean, sell: boolean | undefined, includeFullShop: boolean | undefined) {
-	    const exactq = [{name: {equals: query}}, {displayName: {equals: query}}];
-	    const nonexactq = [{name: {contains: query}}, {displayName: {contains: query}}];
+    async searchItems<T extends boolean>(
+        query: string,
+        exact: boolean,
+        inStock: boolean,
+        sell: boolean,
+        includeFullShop: T
+    ): Promise<SearchItemsReturnType<T>> {
+        const exactq = [
+            { name: { equals: query } },
+            { displayName: { equals: query } },
+        ];
+        const nonexactq = [
+            { name: { contains: query } },
+            { displayName: { contains: query } },
+        ];
 
         return this.prisma.item.findMany({
             where: {
                 OR: exact ? exactq : nonexactq,
-                stock: inStock ? {gt: 0} : undefined,
-                shopBuysItem: sell
+                stock: inStock ? { gt: 0 } : undefined,
+                shopBuysItem: sell,
             },
             include: {
                 prices: true,
-                shop: includeFullShop ? {
+                shop: includeFullShop && {
                     include: {
-                        locations: true
-                    }
-                } : undefined
+                        locations: true,
+                    },
+                },
             },
         });
     }
@@ -178,28 +237,52 @@ export class DatabaseManager {
     async getAllShops() {
         return this.prisma.shop.findMany({
             include: {
-                locations: true
-            }
+                locations: true,
+            },
         });
     }
 
-    async getShop(computerID: number, multiShop: number | undefined, includeItems: boolean | undefined) {
+    async getShop(
+        computerID: number,
+        multiShop: number | undefined,
+        includeItems: boolean | undefined
+    ) {
         return this.prisma.shop.findFirst({
             where: {
                 computerID: computerID,
-                multiShop: multiShop
+                multiShop: multiShop,
             },
-            include: { locations: true, items: includeItems ?? false }
-        })
+            include: { locations: true, items: includeItems ?? false },
+        });
     }
 
-    async getStatistics() {
+    async getStatistics(): Promise<Statistics> {
+        const lastPacket = await this.prisma.shop.findFirst({
+            orderBy: { lastSeen: "desc" },
+        });
+
         return {
-            shopCount: await this.prisma.shop.count(),
-            itemCount: await this.prisma.item.count(),
-            locationCount: await this.prisma.location.count(),
-            lastInfoUpdate: (await this.prisma.shop.findFirst({orderBy: { lastSeen: "desc" }}))?.lastSeen
-        }
+            shopCount: {
+                codeName: "total_shops",
+                friendlyName: "Total shops",
+                value: await this.prisma.shop.count(),
+            },
+            itemCount: {
+                codeName: "total_items",
+                friendlyName: "Total items",
+                value: await this.prisma.item.count(),
+            },
+            locationCount: {
+                codeName: "total_locations",
+                friendlyName: "Total locations",
+                value: await this.prisma.location.count(),
+            },
+            lastInfoUpdate: {
+                codeName: "last_findshop_packet",
+                friendlyName: "Last findshop packet",
+                value: lastPacket?.lastSeen || null,
+            },
+        };
     }
 }
 

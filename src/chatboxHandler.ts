@@ -1,7 +1,7 @@
 import { Client, User } from "switchchat";
 import { z } from "zod";
 import { configSchema } from "./config";
-import { DatabaseManager } from "./db";
+import { DatabaseManager, Statistics } from "./db";
 import { FindShopLogger } from "./logger";
 import { formatLocation, paginate, sliceArgs } from "./utils";
 
@@ -17,10 +17,12 @@ export async function initChatbox(
 
     chatbox.on("command", async (cmd) => {
         if (!config.ALIASES.includes(cmd.command)) return;
-        FindShopLogger.logger.debug(`${cmd.user.name}: ${cmd.command} ${cmd.args.join(" ")}`);
+        FindShopLogger.logger.debug(
+            `${cmd.user.name}: ${cmd.command} ${cmd.args.join(" ")}`
+        );
 
         cmd.args = sliceArgs(cmd.args.join(" "));
-        FindShopLogger.logger.debug(cmd.args)
+        FindShopLogger.logger.debug(cmd.args);
 
         switch (cmd.args[0]) {
             case null:
@@ -36,7 +38,11 @@ export async function initChatbox(
             case "list":
             case "l":
             case "ls": {
-                await chatboxHandler.sendShopList(cmd.user, cmd.args, parseInt(cmd.args[1]));
+                await chatboxHandler.sendShopList(
+                    cmd.user,
+                    cmd.args,
+                    parseInt(cmd.args[1])
+                );
                 break;
             }
 
@@ -54,7 +60,7 @@ export async function initChatbox(
 
             case "shop":
             case "sh":
-                chatboxHandler.getShopInfo(cmd.user, cmd.args[1])
+                chatboxHandler.getShopInfo(cmd.user, cmd.args[1]);
                 break;
 
             case "buy":
@@ -123,35 +129,51 @@ export class ChatboxHandler {
         );
     }
 
-    async sendItemSearch(user: User, query: string, page: number | undefined, sell: boolean) {
+    async sendItemSearch(
+        user: User,
+        query: string,
+        page: number | undefined,
+        sell: boolean
+    ) {
         if (!query) {
-            return this.chatbox.tell(
-                user.uuid,
-                "Missing query"
-            );
+            return this.chatbox.tell(user.uuid, "Missing query");
         }
-        const exact = query.charAt(0) === '=';
+        const exact = query.charAt(0) === "=";
         if (exact) query = query.substring(1);
 
-        const items = await this.db.searchItems(query, exact, false, undefined, true);
+        const items = await this.db.searchItems(
+            query,
+            exact,
+            false,
+            false,
+            true
+        );
         const output: any = [];
 
         items.forEach((item) => {
             if (item.shopBuysItem && !sell) return; // were looking for shops selling items, shop is buying
             if (!item.shopBuysItem && sell) return; // were looking for shops buying items, shop is selling
-            const prices = item.prices.reduce((acc: any, price) => { acc[price.currency] = price; return acc }, {})
-            const kstPrice = prices["KST"]
+            const prices = item.prices.reduce((acc: any, price) => {
+                acc[price.currency] = price;
+                return acc;
+            }, {});
+            const kstPrice = prices["KST"];
             if (!kstPrice) return; // other currencies wip
             // @ts-ignore
-            const mainLocation = item.shop.locations.find(loc => loc.main === true) ?? {}
+            const mainLocation =
+                item.shop.locations.find((loc) => loc.main === true) ?? {};
             const price = `k${kstPrice.value}`;
 
             output.push({
                 price: kstPrice.value,
                 stock: item.stock,
-                text: `${price} (${item.stock ?? "-"}) \`${item.name}\` at **${item.shop.name}** (id=\`${item.shop.computerID}${item.shop.multiShop ? ";":""}${item.shop.multiShop ?? ""}\`) (${formatLocation(
+                text: `${price} (${item.stock ?? "-"}) \`${item.name}\` at **${
+                    item.shop.name
+                }** (id=\`${item.shop.computerID}${
+                    item.shop.multiShop ? ";" : ""
+                }${item.shop.multiShop ?? ""}\`) (${formatLocation(
                     mainLocation
-                )})`
+                )})`,
             });
         });
 
@@ -163,7 +185,7 @@ export class ChatboxHandler {
                 return stockB - stockA;
             }
 
-            return sell && (b.price - a.price) || (a.price - b.price);
+            return (sell && b.price - a.price) || a.price - b.price;
         });
 
         const content: string[] = output.map((v: any) => v.text);
@@ -173,20 +195,26 @@ export class ChatboxHandler {
             paginate({
                 content: content,
                 page: page || 1,
-                args: (sell ? "sell " : "buy ") + ((query.indexOf(" ") === -1 ) && query || `"${query}"`),
+                args:
+                    (sell ? "sell " : "buy ") +
+                    ((query.indexOf(" ") === -1 && query) || `"${query}"`),
             })
         );
     }
-
 
     async sendShopList(user: User, args: string[], page: number) {
         const shops = await this.db.getAllShops();
         const output: string[] = [];
 
         shops.forEach((shop) => {
-            const mainLocation: any = shop.locations.find(loc => loc.main === true) ?? {}
+            const mainLocation: any =
+                shop.locations.find((loc) => loc.main === true) ?? {};
 
-            output.push(`${shop.name} (id=\`${shop.computerID}${shop.multiShop ? ";":""}${shop.multiShop ?? ""}\`) at ${formatLocation(mainLocation)}`);
+            output.push(
+                `${shop.name} (id=\`${shop.computerID}${
+                    shop.multiShop ? ";" : ""
+                }${shop.multiShop ?? ""}\`) at ${formatLocation(mainLocation)}`
+            );
         });
 
         this.chatbox.tell(
@@ -201,23 +229,34 @@ export class ChatboxHandler {
 
     async getShopInfo(user: User, query: string) {
         if (!query) return this.chatbox.tell(user.uuid, "Shop not found");
-        const id = query.split(":")
-        if (id.length > 2) return this.chatbox.tell(user.uuid, "Invalid shop id");
-        const cid = parseInt(id[0])
-        const multishop = parseInt(id[1])
+        const id = query.split(":");
+        if (id.length > 2)
+            return this.chatbox.tell(user.uuid, "Invalid shop id");
+        const cid = parseInt(id[0]);
+        const multishop = parseInt(id[1]);
 
-        if (isNaN(cid) || (isNaN(multishop) && id[1])) return this.chatbox.tell(user.uuid, "Invalid shop id");
+        if (isNaN(cid) || (isNaN(multishop) && id[1]))
+            return this.chatbox.tell(user.uuid, "Invalid shop id");
 
         const shop = await this.db.getShop(cid, multishop || undefined, false);
         if (!shop) return this.chatbox.tell(user.uuid, "Shop not found");
 
-        const mainLocation: any = shop.locations.find(loc => loc.main === true) ?? {}
+        const mainLocation: any =
+            shop.locations.find((loc) => loc.main === true) ?? {};
 
         // TODO: limit length of desc
         // sorry
-        const mainLocationPos  = mainLocation ? ((mainLocation.x && mainLocation.y && mainLocation.z) ? `${mainLocation.x} ${mainLocation.y} ${mainLocation.z}` : "null") : "null";
-        const mainLocationDim  = mainLocation ? (mainLocation.dimension ?? "null") : "null";
-        const mainLocationDesc = mainLocation ? (mainLocation.description ?? "null") : "null";
+        const mainLocationPos = mainLocation
+            ? mainLocation.x && mainLocation.y && mainLocation.z
+                ? `${mainLocation.x} ${mainLocation.y} ${mainLocation.z}`
+                : "null"
+            : "null";
+        const mainLocationDim = mainLocation
+            ? mainLocation.dimension ?? "null"
+            : "null";
+        const mainLocationDesc = mainLocation
+            ? mainLocation.description ?? "null"
+            : "null";
 
         const shopInfo: any = [
             ["name", shop.name],
@@ -229,20 +268,29 @@ export class ChatboxHandler {
             ["fmainLocation", formatLocation(mainLocation)],
             ["softwareName", shop.softwareName],
             ["softwareVersion", shop.softwareVersion],
-            ["lastSeen", shop.lastSeen.toISOString()]
-        ]
-        this.chatbox.tell(user.uuid, shopInfo.reduce((acc: any, v: any) => { return `${acc}\n${v[0]}: \`${v[1] ?? "null"}\``}, `Info for shop \`${query}\``));
+            ["lastSeen", shop.lastSeen.toISOString()],
+        ];
+        this.chatbox.tell(
+            user.uuid,
+            shopInfo.reduce((acc: any, v: any) => {
+                return `${acc}\n${v[0]}: \`${v[1] ?? "null"}\``;
+            }, `Info for shop \`${query}\``)
+        );
     }
 
     async sendStats(user: User) {
-        const stats = await this.db.getStatistics();
+        const dbStats = await this.db.getStatistics();
 
-        const statsArray: any = [
-            ["shopCount", stats.shopCount],
-            ["locationCount", stats.locationCount],
-            ["itemCount", stats.itemCount],
-            ["lastShopSyncUpdate", stats.lastInfoUpdate?.toISOString()]
-        ]
-        this.chatbox.tell(user.uuid, statsArray.reduce((acc: any, v: any) => { return `${acc}\n${v[0]}: \`${v[1] ?? "null"}\``}, "FS stats"));
+        this.chatbox.tell(
+            user.uuid,
+            (Object.keys(dbStats) as (keyof Statistics)[])
+                .map((key) => {
+                    const stat = dbStats[key];
+                    return `${
+                        stat.friendlyName
+                    }: \`${stat.value?.toString()}\``;
+                })
+                .join("\n")
+        );
     }
 }
