@@ -4,6 +4,6 @@
     "line_length": 80
   },
   "MD033": {
-    "allowed_elements": ["h1", "p", "img", "a", "strong"]
+    "allowed_elements": ["h1", "p", "img", "a", "strong", "hr"]
   }
 }

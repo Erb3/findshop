@@ -1,12 +1,14 @@
-# FindShop
-
-<h1 align="center"> Kristsplit </h1>
-<p align="center">Simple applicaiton to <strong>redirect your <a href="https://krist.dev">krist</a></strong>!</p>
+<h1 align="center"> FindShop </h1>
+<p align="center">Powerful SwitchCraft service to <strong>find shops and items!</strong></p>
 
 <p align="center">
-  <img alt="image of docker status" src="https://img.shields.io/github/actions/workflow/status/Erb3/kristsplit/docker-image.yml?style=flat-square&logo=docker&label=Docker%20image">
-  <img alt="image of ci status" src="https://img.shields.io/github/actions/workflow/status/Erb3/kristsplit/ci.yml?style=flat-square&logo=jest&label=Tests">
+  <img alt="GitHub top language" src="https://img.shields.io/github/languages/top/Erb3/FindShop?style=flat-square">
+  <img alt="GitHub Repo stars" src="https://img.shields.io/github/stars/Erb3/FindShop?style=flat-square">
+  <img alt="GitHub contributors" src="https://img.shields.io/github/contributors/Erb3/FindShop?style=flat-square">
+  <img alt="GitHub Created At" src="https://img.shields.io/github/created-at/Erb3/FindShop?style=flat-square">
 </p>
+
+<hr>
 
 FindShop is a SwitchCraft service providing an easy way to search for compatible
 shops implementing the [ShopSync] protocol. Valid command aliases are `\fs` or `\findshop`.
