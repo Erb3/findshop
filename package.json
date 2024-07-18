@@ -18,7 +18,8 @@
     "build": "tsc",
     "check": "tsc --noEmit",
     "dev": "bun run --watch src/index.ts",
-    "start": "bun run src/index.ts"
+    "start": "bun run src/index.ts",
+    "test": "bun test"
   },
   "dependencies": {
     "@prisma/client": "5.17.0",

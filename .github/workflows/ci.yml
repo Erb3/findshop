@@ -1,0 +1,12 @@
+name: my-workflow
+on: push
+jobs:
+  ci:
+    name: bun-ci
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install
+      - run: bun run check
+      - run: bun run test
