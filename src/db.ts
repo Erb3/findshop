@@ -201,13 +201,19 @@ export class DatabaseManager {
         });
     }
 
-    async searchItems<T extends boolean>(
-        query: string,
-        exact: boolean,
-        inStock: boolean,
-        sell: boolean,
-        includeFullShop: T
-    ): Promise<SearchItemsReturnType<T>> {
+    async searchItems<T extends boolean>({
+        query,
+        exact,
+        inStock,
+        shopMustBuyItem,
+        includeFullShop,
+    }: {
+        query: string;
+        exact: boolean;
+        inStock: boolean;
+        shopMustBuyItem: boolean;
+        includeFullShop: T;
+    }): Promise<SearchItemsReturnType<T>> {
         const exactq = [
             { name: { equals: query } },
             { displayName: { equals: query } },
@@ -221,7 +227,7 @@ export class DatabaseManager {
             where: {
                 OR: exact ? exactq : nonexactq,
                 stock: inStock ? { gt: 0 } : undefined,
-                shopBuysItem: sell,
+                shopBuysItem: shopMustBuyItem,
             },
             include: {
                 prices: true,

@@ -81,13 +81,13 @@ Bun.serve({
             const includeFullShop =
                 searchParams.get("includeFullShop") === "true";
 
-            const items = await db.searchItems(
+            const items = await db.searchItems({
                 query,
-                exactMatch,
+                exact: exactMatch,
                 inStock,
                 sell,
-                includeFullShop
-            );
+                includeFullShop,
+            });
 
             const filteredShops: any = {};
 

@@ -47,12 +47,12 @@ export async function initChatbox(
             case "sell":
             case "sl":
             case "s": {
-                chatboxHandler.sendItemSearch(
-                    cmd.user,
-                    cmd.args[1],
-                    parseInt(cmd.args[2]),
-                    true
-                );
+                chatboxHandler.sendItemSearch({
+                    user: cmd.user,
+                    searchQuery: cmd.args[1],
+                    page: parseInt(cmd.args[2]) || 1,
+                    shopBuysItemOnly: true,
+                });
                 break;
             }
 
@@ -63,22 +63,22 @@ export async function initChatbox(
 
             case "buy":
             case "b": {
-                chatboxHandler.sendItemSearch(
-                    cmd.user,
-                    cmd.args[1],
-                    parseInt(cmd.args[2]),
-                    false
-                );
+                chatboxHandler.sendItemSearch({
+                    user: cmd.user,
+                    searchQuery: cmd.args[1],
+                    page: parseInt(cmd.args[2]) || 1,
+                    shopBuysItemOnly: false,
+                });
                 break;
             }
 
             default: {
-                chatboxHandler.sendItemSearch(
-                    cmd.user,
-                    cmd.args[0],
-                    parseInt(cmd.args[1]),
-                    false
-                );
+                chatboxHandler.sendItemSearch({
+                    user: cmd.user,
+                    searchQuery: cmd.args[0],
+                    page: parseInt(cmd.args[1]) || 1,
+                    shopBuysItemOnly: false,
+                });
                 break;
             }
         }
@@ -120,54 +120,65 @@ export class ChatboxHandler {
         );
     }
 
-    async sendDisabledFeature(user: User) {
-        await this.chatbox.tell(
-            user.uuid,
-            `This feature is currently ~~unimplemented~~ disabled, check back later!`
-        );
-    }
+    async sendItemSearch({
+        user,
+        searchQuery,
+        page,
+        shopBuysItemOnly,
+    }: {
+        user: User;
+        searchQuery: string;
+        page: number;
+        shopBuysItemOnly: boolean;
+    }) {
+        if (!searchQuery)
+            return this.chatbox.tell(user.uuid, "&c&lError: &cMissing query");
 
-    async sendItemSearch(
-        user: User,
-        query: string,
-        page: number | undefined,
-        sell: boolean
-    ) {
-        if (!query) {
-            return this.chatbox.tell(user.uuid, "Missing query");
-        }
-        const exact = query.charAt(0) === "=";
-        if (exact) query = query.substring(1);
+        const exact = searchQuery.charAt(0) === "=";
+        if (exact) searchQuery = searchQuery.substring(1);
 
-        const items = await this.db.searchItems(
-            query,
+        const items = await this.db.searchItems({
+            query: searchQuery,
+            includeFullShop: true,
             exact,
-            false,
-            false,
-            true
-        );
-        const output: any = [];
+            inStock: false,
+            shopMustBuyItem: shopBuysItemOnly,
+        });
+
+        const output: {
+            price: number;
+            stock: number;
+            text: string;
+        }[] = [];
 
         items.forEach((item) => {
-            if (item.shopBuysItem && !sell) return; // were looking for shops selling items, shop is buying
-            if (!item.shopBuysItem && sell) return; // were looking for shops buying items, shop is selling
-            const prices = item.prices.reduce((acc: any, price) => {
-                acc[price.currency] = price;
-                return acc;
-            }, {});
-            const kstPrice = prices["KST"];
-            if (!kstPrice) return; // other currencies wip
-            // @ts-ignore
+            // Map array of prices to a map
+            const prices = new Map<string, number>();
+            item.prices.forEach((price) => {
+                FindShopLogger.logger.debug(
+                    `Item ${item.name} has currency ${price.currency} with value ${price.value}`
+                );
+                prices.set(price.currency, price.value);
+            });
+
+            // TODO: other currencies
+            const kstPrice = prices.get("KST");
+            if (kstPrice === undefined) {
+                FindShopLogger.logger.debug(
+                    `Item ${item.name} from ${item.shop.name} does not have a krist price.`
+                );
+                return;
+            }
+
             const mainLocation =
                 item.shop.locations.find((loc) => loc.main === true) ?? {};
-            const price = `k${kstPrice.value}`;
 
             output.push({
-                price: kstPrice.value,
-                stock: item.stock,
-                text: `${price} (${item.stock ?? "-"}) \`${item.name}\` at **${
-                    item.shop.name
-                }** (id=\`${item.shop.computerID}${
+                price: kstPrice,
+                stock: item.stock || 0,
+                text: `k${kstPrice} (${item.stock ?? "-"}) \`${
+                    item.name
+                }\` at **${item.shop.name}** (id=\`${item.shop.computerID}${
                     item.shop.multiShop ? ";" : ""
                 }${item.shop.multiShop ?? ""}\`) (${formatLocation(
                     mainLocation
@@ -175,7 +186,10 @@ export class ChatboxHandler {
             });
         });
 
-        output.sort((a: any, b: any) => {
+        // Sorts based on stock, and price.
+        // If shop buys items, it is sorted after highest price.
+        output.sort((a, b) => {
+            // Check if one doesn't have stock
             const stockA = a.stock === 0 ? 0 : 1;
             const stockB = b.stock === 0 ? 0 : 1;
 
@@ -183,19 +197,21 @@ export class ChatboxHandler {
                 return stockB - stockA;
             }
 
-            return (sell && b.price - a.price) || a.price - b.price;
+            return shopBuysItemOnly ? b.price - a.price : a.price - b.price;
         });
 
-        const content: string[] = output.map((v: any) => v.text);
+        console.log(output);
 
+        // TODO: args is ugly
         this.chatbox.tell(
             user.uuid,
             paginate({
-                content: content,
-                page: page || 1,
+                content: output.map((v) => v.text),
+                page,
                 args:
-                    (sell ? "sell " : "buy ") +
-                    ((query.indexOf(" ") === -1 && query) || `"${query}"`),
+                    (shopBuysItemOnly ? "sell " : "buy ") +
+                    ((searchQuery.indexOf(" ") === -1 && searchQuery) ||
+                        `"${searchQuery}"`),
             })
         );
     }
