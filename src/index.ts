@@ -85,7 +85,7 @@ Bun.serve({
                 query,
                 exact: exactMatch,
                 inStock,
-                sell,
+                shopMustBuyItem: sell,
                 includeFullShop,
             });
 
