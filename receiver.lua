@@ -21,12 +21,12 @@ local FINDSHOP_CHANNEL = settings.get("findshop.channel")
 assert(WSSERVER, "WS server URL must be specified with `findshop.server`")
 assert(TOKEN, "WS server token must be specified with `findshop.token`")
 
+---@type Modem
 local modems = { peripheral.find("modem") }
 local modem
 assert(#modems ~= 0, "No modems to listen with found")
 
 for _, p in ipairs(modems) do
-    ---@diagnostic disable-next-line: undefined-field
     if p.isWireless() then
         modem = p
     end
