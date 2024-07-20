@@ -45,14 +45,15 @@ interface ResponseGeneratorOptions {
     content: string[];
     page: number;
     args: string;
+    cmd: string;
 }
 
 export function paginate(options: ResponseGeneratorOptions) {
-    const { content: body, args, page } = options;
+    const { content: body, args, page, cmd } = options;
     const resultsPerPage = 6;
     const pageCount = Math.ceil(body.length / resultsPerPage);
     const header = `Results ${page}/${pageCount}:`;
-    const footer = `\`\\fs ${args} <page>\``;
+    const footer = `\`\\${cmd} ${args} <page>\``;
 
     if (pageCount == 0) return "No results matching search";
 

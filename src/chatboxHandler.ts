@@ -39,7 +39,8 @@ export async function initChatbox(
             case "ls": {
                 await chatboxHandler.sendShopList(
                     cmd.user,
-                    parseInt(cmd.args[1])
+                    parseInt(cmd.args[1]),
+                    cmd.command
                 );
                 break;
             }
@@ -52,6 +53,7 @@ export async function initChatbox(
                     searchQuery: cmd.args[1],
                     page: parseInt(cmd.args[2]) || 1,
                     shopBuysItemOnly: true,
+                    cmd: cmd.command,
                 });
                 break;
             }
@@ -68,6 +70,7 @@ export async function initChatbox(
                     searchQuery: cmd.args[1],
                     page: parseInt(cmd.args[2]) || 1,
                     shopBuysItemOnly: false,
+                    cmd: cmd.command,
                 });
                 break;
             }
@@ -78,6 +81,7 @@ export async function initChatbox(
                     searchQuery: cmd.args[0],
                     page: parseInt(cmd.args[1]) || 1,
                     shopBuysItemOnly: false,
+                    cmd: cmd.command,
                 });
                 break;
             }
@@ -125,11 +129,13 @@ export class ChatboxHandler {
         searchQuery,
         page,
         shopBuysItemOnly,
+        cmd,
     }: {
         user: User;
         searchQuery: string;
         page: number;
         shopBuysItemOnly: boolean;
+        cmd: string;
     }) {
         if (!searchQuery)
             return this.chatbox.tell(user.uuid, "&c&lError: &cMissing query");
@@ -210,11 +216,12 @@ export class ChatboxHandler {
                     (shopBuysItemOnly ? "sell " : "buy ") +
                     ((searchQuery.indexOf(" ") === -1 && searchQuery) ||
                         `"${searchQuery}"`),
+                cmd,
             })
         );
     }
 
-    async sendShopList(user: User, page: number) {
+    async sendShopList(user: User, page: number, cmd: string) {
         const shops = await this.db.getAllShops();
         const output: string[] = [];
 
@@ -235,6 +242,7 @@ export class ChatboxHandler {
                 content: output,
                 page: page || 1,
                 args: "list ",
+                cmd,
             })
         );
     }
