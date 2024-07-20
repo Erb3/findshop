@@ -27,7 +27,7 @@ export async function initChatbox(
             case null:
             case undefined:
             case "help":
-                chatboxHandler.sendHelp(cmd.user);
+                chatboxHandler.sendHelp(cmd.user, cmd.command);
                 break;
 
             case "stats":
@@ -107,15 +107,15 @@ export class ChatboxHandler {
         this.config = config;
     }
 
-    async sendHelp(user: User) {
+    async sendHelp(user: User, cmd: string) {
         await this.chatbox.tell(
             user.uuid,
             `FindShop helps locate ShopSync-compatible shops buying or selling an item.
-      \`\\fs list\` - List detected shops
-      \`\\fs stats\` - Statistics - currently only basic
-      \`\\fs buy [item]\` - Finds shops selling *[item]*
-      \`\\fs sell [item]\` - Finds shops buying *[item]*
-      \`\\fs shop [id]\` - Finds shop based on computer *[id]* and their info
+      \`\\${cmd} list\` - List detected shops
+      \`\\${cmd} stats\` - Statistics - currently only basic
+      \`\\${cmd} buy [item]\` - Finds shops selling *[item]*
+      \`\\${cmd} sell [item]\` - Finds shops buying *[item]*
+      \`\\${cmd} shop [id]\` - Finds shop based on computer *[id]* and their info
       For more information, check [the GitHub repository](${this.config.GITHUB_LINK})`
         );
     }
@@ -199,8 +199,6 @@ export class ChatboxHandler {
 
             return shopBuysItemOnly ? b.price - a.price : a.price - b.price;
         });
-
-        console.log(output);
 
         // TODO: args is ugly
         this.chatbox.tell(
